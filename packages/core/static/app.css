@@ -204,16 +204,16 @@ html[data-cur=INR] [data-show=INR], html[data-cur=USD] [data-show=USD] { display
 
 /* ===================== Rich dark theme ===================== */
 :root {
-  --bg: #090b0a; --bg2: #0f1211; --surface: #121614; --surface2: #181d1a; --text: #f1f4f2; --muted: #8b958f; --border: rgba(255,255,255,.075); --border-strong: rgba(255,255,255,.14);
-  --a: var(--accent); --a-ink: #07110b; --a-soft: color-mix(in oklch, var(--a) 14%, transparent); --a-glow: color-mix(in oklch, var(--a) 32%, transparent);
+  --bg: #0A0D0B; --bg2: #0f1311; --surface: #131715; --surface2: #181d1a; --text: #f1f4f2; --muted: #8b958f; --border: rgba(255,255,255,.075); --border-strong: rgba(255,255,255,.14);
+  --a: var(--accent); --a-ink: #0A0D0B; --a-soft: color-mix(in oklch, var(--a) 14%, transparent); --a-glow: color-mix(in oklch, var(--a) 32%, transparent);
   --good: #7ee787; --good-bg: rgba(126,231,135,.12); --bad: #ff7b72; --bad-bg: rgba(255,123,114,.13); --warn: #f2cc60; --warn-bg: rgba(242,204,96,.12); --info: #79c0ff; --info-bg: rgba(121,192,255,.12);
   --card-bg: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012)), var(--surface);
   --shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px -18px rgba(0,0,0,.8); --radius: 20px; --radius-sm: 12px; color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #eceeed; --bg2: #f4f5f4; --surface: #ffffff; --surface2: #f5f6f5; --text: #101412; --muted: #66706a; --border: rgba(16,20,18,.08); --border-strong: rgba(16,20,18,.16);
-    --a: color-mix(in oklch, var(--accent) 58%, black); --a-ink: #ffffff; --a-soft: color-mix(in oklch, var(--a) 10%, white); --a-glow: color-mix(in oklch, var(--a) 22%, transparent);
+    --bg: #F3F5EF; --bg2: #eaede5; --surface: #ffffff; --surface2: #f5f6f5; --text: #101412; --muted: #66706a; --border: rgba(16,20,18,.08); --border-strong: rgba(16,20,18,.16);
+    --a: color-mix(in oklch, var(--accent) 58%, black); --a-ink: #B8F23B; --a-soft: color-mix(in oklch, var(--a) 10%, white); --a-glow: color-mix(in oklch, var(--a) 22%, transparent);
     --good: #15803d; --good-bg: #e7f7ec; --bad: #c0362c; --bad-bg: #fdecea; --warn: #9a6700; --warn-bg: #fff4d6; --info: #1f6feb; --info-bg: #e8f1ff;
     --card-bg: var(--surface); --shadow: 0 1px 2px rgba(16,20,18,.05), 0 10px 24px -16px rgba(16,20,18,.25); color-scheme: light;
   }
@@ -230,7 +230,7 @@ h1 { font-size: 1.7rem; } h2 { font-size: .8rem; } a { color: var(--a); }
 .side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem .9rem; background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; }
 .brand { display: flex; align-items: center; gap: .6rem; padding: .2rem .5rem 1rem; color: var(--text); font-weight: 650; font-size: 1.02rem; letter-spacing: -0.02em; }
 .brand:hover { text-decoration: none; }
-.logo { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--a); color: var(--a-ink); font-weight: 800; font-size: .85rem; box-shadow: 0 0 0 4px var(--a-soft); }
+.logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: var(--a); color: var(--a-ink); } .logo svg { width: 18px; height: 18px; }
 .side-label { margin: .4rem .6rem .3rem; font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .side nav { display: grid; gap: .15rem; }
 .side nav a, .me-links a, .me-links button { display: flex; align-items: center; gap: .65rem; padding: .55rem .7rem; border-radius: 12px; color: var(--muted); font-weight: 500; font-size: .9rem; transition: background .15s, color .15s; }
@@ -352,3 +352,6 @@ html[data-cur=INR] .cur-toggle [data-cur-btn=INR], html[data-cur=USD] .cur-toggl
 .vbar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; min-height: 0; }
 .vbar-fill { min-height: 3px; }
 .viz { display: grid; grid-template-columns: 1.8fr 1fr; gap: 1.1rem; margin-bottom: 1.1rem; } .viz .card { margin: 0; } @media (max-width: 900px) { .viz { grid-template-columns: 1fr; } }
+/* brand tile: Lime tile + Ink glyph in dark mode, Ink tile + Lime glyph in light mode */
+.logo { background: #B8F23B; color: #0A0D0B; }
+@media (prefers-color-scheme: light) { .logo { background: #0A0D0B; color: #B8F23B; } }

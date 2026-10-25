@@ -94,7 +94,8 @@ export function createLeadRevive(options = {}) {
     slug: 'leadrevive',
     name: 'LeadRevive',
     tagline: 'Win back the leads you already paid for',
-    accent: '#a78bfa',
+    accent: '#b8f23b',
+    glyph: 'revive',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
