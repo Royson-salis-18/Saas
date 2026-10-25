@@ -112,7 +112,8 @@ export function createDunningDesk(options = {}) {
     slug: 'dunningdesk',
     name: 'DunningDesk',
     tagline: 'Get paid on time without awkward emails',
-    accent: '#2dd4bf',
+    accent: '#b8f23b',
+    glyph: 'invoice',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
