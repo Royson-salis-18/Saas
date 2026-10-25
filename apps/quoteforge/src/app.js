@@ -136,7 +136,8 @@ export function createQuoteForge(options = {}) {
     slug: 'quoteforge',
     name: 'QuoteForge',
     tagline: 'Send quotes clients can accept in one click',
-    accent: '#fb923c',
+    accent: '#b8f23b',
+    glyph: 'spark',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
