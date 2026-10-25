@@ -1,5 +1,5 @@
 import { html } from './html.js';
-import { layout } from './ui.js';
+import { layout, statGrid, ring, vbars, card, delta } from './ui.js';
 import { formatMajor } from './money.js';
 
 function limitList(app, plan) {
@@ -28,6 +28,20 @@ export function pricingCards(app, { cta = '/signup' } = {}) {
   )}</div>`;
 }
 
+/** Illustrative dashboard shown in the hero. Always labelled as sample data. */
+function heroPreview(pv) {
+  if (!pv) return '';
+  return html`<div class="mock" aria-hidden="true">
+    <div class="mock-bar"><i></i><i></i><i></i><span>Sample data</span></div>
+    <div class="mock-body">
+      ${statGrid(pv.kpis)}
+      <div class="mock-row">
+        <div class="card"><h2>${pv.chartTitle}</h2>${vbars({ items: pv.bars, height: 130 })}</div>
+        <div class="card ring-card"><h2>${pv.ringTitle}</h2>${ring({ value: pv.ring.value, text: pv.ring.text, label: pv.ring.label })}<p class="muted center">${pv.ring.note}</p></div>
+      </div>
+    </div></div>`;
+}
+
 export function landingPage(ctx) {
   const { config } = ctx.app;
   const m = config.marketing;
@@ -41,6 +55,7 @@ export function landingPage(ctx) {
       <a class="btn btn-lg" href="#pricing">See pricing</a>
     </div>
   </section>
+  ${heroPreview(m.preview)}
   <section class="features">${(m.points ?? []).map(
     (p) => html`<div class="feature"><h3>${p.title}</h3><p class="muted">${p.body}</p></div>`,
   )}</section>
