@@ -1,6 +1,7 @@
 import { html, raw, escape, safeUrl } from './html.js';
 import { formatDate } from './dates.js';
 import { formatMoney } from './money.js';
+import { glyphPath } from './brand.js';
 
 export { formatDate, formatMoney };
 
@@ -152,6 +153,7 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
   <meta property="og:description" content="${description ?? config.tagline}">
   ${noindex ? raw('<meta name="robots" content="noindex">') : ''}
   ${ctx.csrf ? html`<meta name="csrf-token" content="${ctx.csrf}">` : ''}
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/app.js" defer></script>
   ${scripts.map((s) => html`<script src="${s}" defer></script>`)}
@@ -160,7 +162,7 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
   ${ctx.user
     ? html`<div class="shell">
       <aside class="side">
-        <a class="brand" href="/"><span class="logo">${config.name.slice(0, 1)}</span>${config.name}</a>
+        <a class="brand" href="/"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${glyphPath(config.glyph)}"/></svg></span>${config.name}</a>
         <p class="side-label">Menu</p>
         <nav>${config.nav.map((n) => navLink(ctx, n))}</nav>
         <div class="side-spacer"></div>
@@ -178,7 +180,7 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
       </div>
     </div>`
     : html`<header class="topbar"><div class="container bar">
-        <a class="brand" href="/"><span class="logo">${config.name.slice(0, 1)}</span>${config.name}</a>
+        <a class="brand" href="/"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${glyphPath(config.glyph)}"/></svg></span>${config.name}</a>
         <div class="bar-right"><a href="/#pricing">Pricing</a><a href="/login">Log in</a><a class="btn btn-primary btn-sm" href="/signup">Start free</a></div></div></header>
       <main class="container">${flash ? html`<div class="flash flash-${flash.type}" role="status">${flash.msg}</div>` : ''}${body}</main>
       <footer class="footer"><div class="container"><span>© ${new Date(ctx.now()).getUTCFullYear()} ${config.name}</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a>${config.env.SUPPORT_EMAIL ? html`<a href="mailto:${config.env.SUPPORT_EMAIL}">Support</a>` : ''}</div></footer>`}
