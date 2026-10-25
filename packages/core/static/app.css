@@ -180,7 +180,10 @@ html[data-cur=INR] [data-show=INR], html[data-cur=USD] [data-show=USD] { display
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; }
 .copy-box { background: var(--bg); border: 1px dashed var(--border); border-radius: 8px; padding: 0.5rem 0.7rem; word-break: break-all; }
 .bars { display: flex; align-items: flex-end; gap: 2px; height: 34px; }
-.bars i { flex: 1; min-width: 2px; border-radius: 1px; background: var(--good); }
+.bars i { flex: 1; min-width: 2px; height: 100%; border-radius: 1px; background: var(--good); }
+.bars.lat i { background: var(--accent); }
+.bars.lat i.down { background: var(--bad); }
+.bars i.warn { background: var(--warn); }
 .bars i.down { background: var(--bad); }
 .bars i.none { background: var(--border); }
 .draft { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; }
