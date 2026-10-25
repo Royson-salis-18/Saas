@@ -7,6 +7,9 @@
     var btn = e.target.closest('[data-cur-btn]');
     if (btn) document.documentElement.setAttribute('data-cur', btn.getAttribute('data-cur-btn'));
 
+    // Print the page: <button data-print>
+    if (e.target.closest('[data-print]')) window.print();
+
     // Copy text from an element: <button data-copy="#id">
     var copy = e.target.closest('[data-copy]');
     if (copy) {
