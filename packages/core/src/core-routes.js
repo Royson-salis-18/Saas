@@ -16,6 +16,7 @@ import {
 } from './security.js';
 import { billingConfigured, createCheckout, handleRazorpayWebhook, handleStripeWebhook, paidPlans } from './billing.js';
 import { formatMajor } from './money.js';
+import { faviconSvg } from './brand.js';
 
 const TZ_BY_CURRENCY = { INR: 'Asia/Kolkata', USD: 'America/New_York' };
 const CURRENCY_OPTIONS = [
@@ -34,6 +35,7 @@ export function registerCoreRoutes(app) {
     (ctx) => (ctx.user ? redirect(config.home) : landingPage(ctx)),
     { public: true },
   );
+  app.get('/favicon.svg', () => ({ status: 200, headers: { 'content-type': 'image/svg+xml', 'cache-control': 'public, max-age=86400' }, body: faviconSvg(config.glyph) }), { public: true });
   app.get('/privacy', (ctx) => legalPage(ctx, 'privacy'), { public: true });
   app.get('/terms', (ctx) => legalPage(ctx, 'terms'), { public: true });
 

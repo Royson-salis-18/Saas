@@ -120,7 +120,8 @@ export function createPingPulse(options = {}) {
     slug: 'pingpulse',
     name: 'PingPulse',
     tagline: 'Know when a client site breaks — before the client does',
-    accent: '#38bdf8',
+    accent: '#b8f23b',
+    glyph: 'pulse',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Monitors' },
