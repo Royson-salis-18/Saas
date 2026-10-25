@@ -45,7 +45,7 @@ test('signup, session, logout, login round trip', async () => {
     assert.equal(s.location, '/dashboard');
     const dash = await c.get('/dashboard');
     assert.equal(dash.status, 200);
-    assert.match(dash.text, /Free/);
+    assert.match(dash.text, /Upgrade to Pro/);
     // session cookie must be HttpOnly + SameSite
     const raw = await fetch(t.base + '/login', { method: 'POST', redirect: 'manual', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'email=owner%40example.com&password=correct+horse+battery' });
     const setCookie = raw.headers.getSetCookie().find((x) => x.startsWith('fixture_sid='));

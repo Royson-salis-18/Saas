@@ -3,6 +3,8 @@ import {
   HttpError,
   badge,
   card,
+  ring,
+  vbars,
   clean,
   createApp,
   csrfField,
@@ -134,7 +136,7 @@ export function createQuoteForge(options = {}) {
     slug: 'quoteforge',
     name: 'QuoteForge',
     tagline: 'Send quotes clients can accept in one click',
-    accent: '#c2410c',
+    accent: '#fb923c',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
@@ -154,6 +156,7 @@ export function createQuoteForge(options = {}) {
       emails: app.mailer.sentThisMonth(user.id),
     }),
     marketing: {
+      preview: { chartTitle: 'Quotes by status', ringTitle: 'Win rate, 90 days', bars: [{ label: 'Draft', value: 6 }, { label: 'Sent', value: 14 }, { label: 'Viewed', value: 9 }, { label: 'Accepted', value: 21 }, { label: 'Declined', value: 7 }, { label: 'Expired', value: 4 }], ring: { value: 62, text: '62%', label: 'won', note: '21 won · 11 lost or expired' }, kpis: [{ label: 'Open pipeline', value: '₹9.4L', delta: '23 quotes' }, { label: 'Accepted this month', value: '₹6.1L', delta: '+18%', deltaTone: 'good' }, { label: 'Need a follow-up', value: '5', delta: 'unanswered 3d+', deltaTone: 'warn' }] },
       audience: 'For contractors, consultants and service businesses',
       headline: 'Win more jobs with quotes that look professional and close faster.',
       sub: 'Build a branded quote in minutes, send one link, and let your client accept or decline in a click. GST and sales tax handled. You see who opened it — and who needs a nudge.',
@@ -376,6 +379,7 @@ export function createQuoteForge(options = {}) {
         { label: 'Accepted this month', value: formatMoney(s.acceptedMonth, cur), tone: 'good', hint: `${s.acceptedMonthN} quote${s.acceptedMonthN === 1 ? '' : 's'}` },
         { label: 'Win rate (90d)', value: s.rate === null ? '—' : `${s.rate}%`, hint: `${s.won} won · ${s.lost} lost/expired` },
       ])}`)}
+      ${Object.entries(stats).slice(0, 1).map(([cur, s]) => html`<div class="viz">${card('Quotes by status', vbars({ height: 170, items: ['draft', 'sent', 'viewed', 'accepted', 'declined', 'expired'].map((k) => ({ label: STATUS_LABEL[k], value: quotes.filter((q) => q.currency === cur && effectiveStatus(q, today) === k).length, tone: k === 'declined' || k === 'expired' ? 'bad' : '' })) }))}${card('Win rate (90 days)', html`${ring({ value: s.rate ?? 0, max: 100, text: s.rate === null ? '—' : `${s.rate}%`, label: 'won' })}<p class="muted center">${s.won} won · ${s.lost} lost or expired</p>`, { className: 'ring-card' })}</div>`)}
       ${follow.length
         ? card('Needs a follow-up', table({
             columns: [

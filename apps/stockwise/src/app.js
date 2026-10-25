@@ -3,6 +3,8 @@ import {
   addDays,
   badge,
   card,
+  ring,
+  vbars,
   clean,
   createApp,
   csrfField,
@@ -80,7 +82,7 @@ export function createStockWise(options = {}) {
     slug: 'stockwise',
     name: 'StockWise',
     tagline: 'Know what to reorder, how much, and what is tying up your cash',
-    accent: '#15803d',
+    accent: '#b6f23a',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
@@ -95,6 +97,7 @@ export function createStockWise(options = {}) {
     settingsDefaults: { business_name: '', ...DEFAULTS },
     usage: (db, user) => ({ skus: db.get('SELECT COUNT(*) AS n FROM products WHERE user_id = ?', user.id).n }),
     marketing: {
+      preview: { chartTitle: 'Stock by status (SKUs)', ringTitle: 'Healthy stock', bars: [{ label: 'Healthy', value: 148 }, { label: 'Soon', value: 23 }, { label: 'Reorder', value: 12 }, { label: 'Out', value: 4 }, { label: 'Excess', value: 17 }, { label: 'Dead', value: 9 }], ring: { value: 70, text: '70%', label: 'of SKUs', note: '₹4.2L tied up in excess and dead stock' }, kpis: [{ label: 'Need ordering now', value: '16', delta: '4 out of stock', deltaTone: 'bad' }, { label: 'Stock value', value: '₹38.4L', delta: '213 SKUs' }, { label: 'Cash tied up', value: '₹4.2L', delta: '26 SKUs', deltaTone: 'warn' }] },
       audience: 'For distributors, retailers and D2C brands',
       headline: 'Stop guessing your reorders. Stop stockouts and dead stock.',
       sub: 'Upload your stock and sales exports. StockWise calculates reorder points with safety stock, tells you what to buy this week and how much, drafts the purchase order per supplier, and shows how much cash is sitting in stock that does not move.',
@@ -178,6 +181,8 @@ export function createStockWise(options = {}) {
         { label: 'Stock value', value: m(s.stockValue), hint: `${s.skus} SKUs` },
         { label: 'Cash tied up in excess / dead stock', value: m(s.tiedUp), tone: s.tiedUp ? 'warn' : 'good', hint: `${s.overstock} overstocked · ${s.dead} dead` },
       ])}
+      <div class="viz">${card('Stock health by status', vbars({ height: 170, items: [{ label: 'Healthy', value: rows.length - s.stockout - s.reorderNow - s.reorderSoon - s.overstock - s.dead - rows.filter((r) => r.rec.status === 'no_data').length }, { label: 'Soon', value: s.reorderSoon, tone: 'warn' }, { label: 'Reorder', value: s.reorderNow, tone: 'bad' }, { label: 'Out', value: s.stockout, tone: 'bad' }, { label: 'Excess', value: s.overstock }, { label: 'Dead', value: s.dead }] }))}
+        ${card('Healthy SKUs', html`${ring({ value: rows.filter((r) => ['ok'].includes(r.rec.status)).length, max: rows.length, text: `${Math.round((rows.filter((r) => r.rec.status === 'ok').length / rows.length) * 100)}%`, label: 'of SKUs' })}<p class="muted center">${m(s.tiedUp)} tied up in excess and dead stock</p>`, { className: 'ring-card' })}</div>
       <div class="grid-2">
         ${card('Most urgent', table({
           columns: [

@@ -2,6 +2,8 @@ import {
   HttpError,
   badge,
   card,
+  ring,
+  vbars,
   clean,
   createApp,
   csrfField,
@@ -118,7 +120,7 @@ export function createPingPulse(options = {}) {
     slug: 'pingpulse',
     name: 'PingPulse',
     tagline: 'Know when a client site breaks — before the client does',
-    accent: '#0369a1',
+    accent: '#38bdf8',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Monitors' },
@@ -131,6 +133,7 @@ export function createPingPulse(options = {}) {
     settingsDefaults: { alert_email: '', webhook_url: '', fail_threshold: 2, status_title: '' },
     usage: (db, user) => ({ monitors: db.get('SELECT COUNT(*) AS n FROM monitors WHERE user_id = ?', user.id).n }),
     marketing: {
+      preview: { chartTitle: 'Response time (ms), last 12 checks', ringTitle: 'Uptime, 30 days', bars: [{ label: '', value: 182 }, { label: '', value: 176 }, { label: '', value: 190 }, { label: '', value: 410 }, { label: '', value: 205 }, { label: '', value: 188 }, { label: '', value: 179 }, { label: '', value: 184 }, { label: '', value: 177 }, { label: '', value: 193 }, { label: '', value: 181 }, { label: '', value: 175 }], ring: { value: 99.96, text: '99.96%', label: 'uptime', note: '1 incident, resolved in 4m' }, kpis: [{ label: 'Monitors up', value: '24 / 25', delta: '1 down', deltaTone: 'bad' }, { label: 'Avg response', value: '186 ms', delta: '−8 ms', deltaTone: 'good' }, { label: 'SSL expiring ≤14d', value: '2', delta: 'renew soon', deltaTone: 'warn' }] },
       audience: 'For web agencies, freelancers and SaaS teams',
       headline: 'Uptime, SSL expiry and cron-job monitoring in one calm dashboard.',
       sub: 'PingPulse checks your clients’ sites and background jobs around the clock, alerts you the moment something breaks, and gives each client a clean public status page.',
@@ -349,6 +352,7 @@ export function createPingPulse(options = {}) {
         { label: 'SSL expiring ≤14d', value: expiring, tone: expiring ? 'warn' : '' },
         { label: 'Paused', value: monitors.filter((m) => m.paused).length },
       ])}
+      <div class="viz">${card('Response time by monitor (ms)', vbars({ height: 170, items: monitors.filter((m) => m.last_latency_ms != null).slice(0, 10).map((m) => ({ label: m.name.slice(0, 10), value: m.last_latency_ms, tone: m.state === 'down' ? 'bad' : '' })) }))}${card('Uptime, last 24h', html`${(() => { const t = [...view.values()].reduce((a, v) => ({ ok: a.ok + v.ok, n: a.n + v.n }), { ok: 0, n: 0 }); const u = t.n ? pct(t.ok, t.n) : null; return ring({ value: u ?? 0, max: 100, text: u === null ? '—' : `${u}%`, label: 'all monitors' }); })()}<p class="muted center">${down ? `${down} monitor${down === 1 ? '' : 's'} down now` : 'Everything is up'}</p>`, { className: 'ring-card' })}</div>
       ${card('', table({
         columns: [
           { label: 'Status', render: (m) => (m.paused ? badge('Paused', 'neutral') : badge(STATE_LABEL[m.state], STATE_TONE[m.state])) },

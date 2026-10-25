@@ -2,6 +2,8 @@ import {
   HttpError,
   badge,
   card,
+  ring,
+  vbars,
   clean,
   createApp,
   csrfField,
@@ -110,7 +112,7 @@ export function createDunningDesk(options = {}) {
     slug: 'dunningdesk',
     name: 'DunningDesk',
     tagline: 'Get paid on time without awkward emails',
-    accent: '#0f766e',
+    accent: '#2dd4bf',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
@@ -136,6 +138,7 @@ export function createDunningDesk(options = {}) {
       emails: app.mailer.sentThisMonth(user.id),
     }),
     marketing: {
+      preview: { chartTitle: 'Receivables aging', ringTitle: 'Collected after reminders', bars: [{ label: 'Current', value: 142 }, { label: '1–30d', value: 86 }, { label: '31–60d', value: 41 }, { label: '61–90d', value: 18 }, { label: '90d+', value: 9 }], ring: { value: 64, text: '64%', label: 'recovered', note: 'of overdue value paid after a reminder' }, kpis: [{ label: 'Outstanding', value: '₹12.8L', delta: '31 invoices' }, { label: 'Overdue', value: '₹4.1L', delta: '−12% vs last month', deltaTone: 'good' }, { label: 'Avg days paid late', value: '9d', delta: '−3d', deltaTone: 'good' }] },
       audience: 'For agencies, consultants and distributors',
       headline: 'Late invoices chased for you — politely, on schedule.',
       sub: 'DunningDesk sends the right reminder at the right time, stops the moment a client pays, and shows exactly how much cash it helped you collect.',
@@ -284,6 +287,7 @@ export function createDunningDesk(options = {}) {
       ${sent >= emailLimit ? html`<div class="flash flash-err">You have used all ${emailLimit} reminder emails on the ${ctx.planInfo.label} plan this month. <a href="/billing">Upgrade</a> to keep chasing.</div>` : ''}
       ${noEmail ? html`<div class="flash flash-err">${noEmail} open invoice${noEmail === 1 ? ' has' : 's have'} no valid client email, so no reminders can be sent. <a href="/invoices?filter=open">Review</a></div>` : ''}
       ${blocks}
+      ${Object.entries(aging).slice(0, 1).map(([cur, a]) => html`<div class="viz">${card(`Receivables aging (${cur})`, vbars({ height: 170, format: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), items: Object.keys(BUCKET_LABELS).map((k) => ({ label: BUCKET_LABELS[k].replace(' days', 'd').replace('Not yet due', 'Current'), value: Math.round(a[k].total / 100), tone: k === 'd61_90' || k === 'd90' ? 'bad' : k === 'd31_60' ? 'warn' : '' })) }))}${card('Overdue share', html`${ring({ value: summary[cur].overdue, max: summary[cur].outstanding || 1, text: `${summary[cur].outstanding ? Math.round((summary[cur].overdue / summary[cur].outstanding) * 100) : 0}%`, label: 'of outstanding' })}<p class="muted center">${formatMoney(summary[cur].collectedAfterReminder, cur)} collected after reminders</p>`, { className: 'ring-card' })}</div>`)}
       <div class="grid-2">
         ${card(
           'Aging',
