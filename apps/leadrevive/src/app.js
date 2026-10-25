@@ -2,6 +2,8 @@ import {
   HttpError,
   badge,
   card,
+  ring,
+  vbars,
   clean,
   createApp,
   csrfField,
@@ -92,7 +94,7 @@ export function createLeadRevive(options = {}) {
     slug: 'leadrevive',
     name: 'LeadRevive',
     tagline: 'Win back the leads you already paid for',
-    accent: '#6d28d9',
+    accent: '#a78bfa',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
@@ -111,6 +113,7 @@ export function createLeadRevive(options = {}) {
       ai_drafts: aiUsed(user.id),
     }),
     marketing: {
+      preview: { chartTitle: 'Cold leads by days quiet', ringTitle: 'Leads revived', bars: [{ label: '7–14d', value: 34 }, { label: '15–30d', value: 51 }, { label: '31–60d', value: 38 }, { label: '61–90d', value: 22 }, { label: '90d+', value: 15 }], ring: { value: 28, text: '28%', label: 'revived', note: 'replied or won after a follow-up' }, kpis: [{ label: 'Revenue at risk', value: '₹18.6L', delta: '160 cold leads', deltaTone: 'bad' }, { label: 'Recovered this month', value: '₹3.2L', delta: '+22%', deltaTone: 'good' }, { label: 'Follow-ups sent', value: '212', delta: '31 days' }] },
       audience: 'For agencies, brokers and service businesses',
       headline: 'Your cold leads are unpaid revenue. Go get it back.',
       sub: 'LeadRevive finds the enquiries that went quiet, ranks them by value, writes a personal follow-up for each, and shows how much revenue it recovered.',
@@ -239,6 +242,7 @@ export function createLeadRevive(options = {}) {
         { label: 'Follow-ups sent (31d)', value: sentMonth },
         { label: 'Leads revived', value: revived, hint: `${contactedIds.size ? Math.round((revived / contactedIds.size) * 100) : 0}% of leads followed up` },
       ])}
+      ${stale.length ? html`<div class="viz">${card('Cold leads by days quiet', vbars({ height: 170, items: [['7–14d', 7, 14], ['15–30d', 15, 30], ['31–60d', 31, 60], ['61–90d', 61, 90], ['90d+', 91, 1e9]].map(([label, lo, hi]) => ({ label, value: stale.filter((l) => l.days >= lo && l.days <= hi).length })) }))}${card('Leads revived', html`${ring({ value: revived, max: contactedIds.size || 1, text: `${contactedIds.size ? Math.round((revived / contactedIds.size) * 100) : 0}%`, label: 'revived' })}<p class="muted center">replied or won after a follow-up</p>`, { className: 'ring-card' })}</div>` : ''}
       ${stale.length
         ? card(
             'Follow up first',
