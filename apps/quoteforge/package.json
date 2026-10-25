@@ -1,0 +1,9 @@
+{
+  "name": "@saas/quoteforge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": { "start": "node server.js", "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js" },
+  "dependencies": { "@saas/core": "*" }
+}
