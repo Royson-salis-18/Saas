@@ -9,10 +9,6 @@
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test \"packages/*/test/*.test.js\" \"apps/*/test/*.test.js\"",
     "start:leadrevive": "node apps/leadrevive/server.js",
-    "start:dunningdesk": "node apps/dunningdesk/server.js",
-    "start:pingpulse": "node apps/pingpulse/server.js",
-    "start:quoteforge": "node apps/quoteforge/server.js",
-    "start:stockwise": "node apps/stockwise/server.js",
     "grant": "node packages/core/bin/grant.js"
   }
 }
