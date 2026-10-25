@@ -82,7 +82,8 @@ export function createStockWise(options = {}) {
     slug: 'stockwise',
     name: 'StockWise',
     tagline: 'Know what to reorder, how much, and what is tying up your cash',
-    accent: '#b6f23a',
+    accent: '#b8f23b',
+    glyph: 'cube',
     home: '/dashboard',
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
