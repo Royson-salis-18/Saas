@@ -133,7 +133,7 @@ export function trendTone(value, { good = 'up' } = {}) {
 
 function navLink(ctx, item) {
   const active = ctx.path === item.href || (item.href !== '/' && ctx.path.startsWith(`${item.href}/`));
-  return html`<a href="${item.href}" class="${active ? 'active' : ''}">${icon(iconFor(item))}<span>${item.label}</span></a>`;
+  return html`<a href="${item.href}" title="${item.label}" class="${active ? 'active' : ''}">${icon(iconFor(item))}<span>${item.label}</span></a>`;
 }
 
 /** Wrap page content in the shared document shell. */
