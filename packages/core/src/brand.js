@@ -5,6 +5,8 @@
 // Dark mode : Ink background, Lime tile, Ink glyph, Paper wordmark.
 // Light mode: Paper background, Ink tile, Lime glyph, Ink wordmark.
 
+import { THEMES } from './themes.js';
+
 export const COLORS = { ink: '#0A0D0B', lime: '#B8F23B', paper: '#F3F5EF' };
 
 /** 24x24 line glyphs (stroke only, round caps). */
@@ -35,27 +37,34 @@ export const PRODUCTS = {
 };
 
 const FONT = "ui-sans-serif, Inter, -apple-system, 'Segoe UI', Roboto, sans-serif";
-const scheme = (mode) => (mode === 'dark' ? { bg: COLORS.ink, tile: COLORS.lime, glyph: COLORS.ink, word: COLORS.paper } : { bg: COLORS.paper, tile: COLORS.ink, glyph: COLORS.lime, word: COLORS.ink });
+/** Each product has its own palette (themes.js); the shared defaults are only a fallback. */
+const scheme = (mode, slug) => {
+  const th = THEMES[slug];
+  if (!th) return mode === 'dark' ? { bg: COLORS.ink, tile: COLORS.lime, glyph: COLORS.ink, word: COLORS.paper } : { bg: COLORS.paper, tile: COLORS.ink, glyph: COLORS.lime, word: COLORS.ink };
+  return mode === 'dark' ? { bg: th.dark.bg, tile: th.accent, glyph: th.ink, word: '#f1f4f2' } : { bg: th.light.bg, tile: th.dark.bg, glyph: th.accent, word: '#101412' };
+};
 
 const glyphEl = (g, color, x = 0, y = 0, size = 24) =>
   `<path transform="translate(${x} ${y}) scale(${size / 24})" d="${GLYPHS[g]}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
 
 /** Square mark: rounded tile with the glyph. */
-export function markSvg(glyph, mode = 'dark', { size = 96 } = {}) {
-  const c = scheme(mode);
+export function markSvg(glyph, mode = 'dark', { size = 96, product } = {}) {
+  const c = scheme(mode, product);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 96 96" role="img"><rect width="96" height="96" rx="26" fill="${c.tile}"/>${glyphEl(glyph, c.glyph, 20, 20, 56)}</svg>\n`;
 }
 
 /** Horizontal lockup: mark + wordmark, on a transparent background. */
-export function lockupSvg(name, glyph, mode = 'dark') {
-  const c = scheme(mode);
+export function lockupSvg(name, glyph, mode = 'dark', product) {
+  const c = scheme(mode, product);
   const w = Math.round(64 + name.length * 19.5);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="48" viewBox="0 0 ${w} 48" role="img" aria-label="${name}"><rect width="48" height="48" rx="13" fill="${c.tile}"/>${glyphEl(glyph, c.glyph, 10, 10, 28)}<text x="62" y="32" font-family="${FONT}" font-size="26" font-weight="650" letter-spacing="-0.6" fill="${c.word}">${name}</text></svg>\n`;
 }
 
 /** Favicon that follows the viewer's light/dark setting. */
-export function faviconSvg(glyph) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><style>.t{fill:${COLORS.lime}}.g{stroke:${COLORS.ink}}@media (prefers-color-scheme:light){.t{fill:${COLORS.ink}}.g{stroke:${COLORS.lime}}}</style><rect class="t" width="96" height="96" rx="26"/><path class="g" transform="translate(20 20) scale(2.333)" d="${GLYPHS[glyph]}" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n`;
+export function faviconSvg(glyph, product) {
+  const d = scheme('dark', product);
+  const l = scheme('light', product);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><style>.t{fill:${d.tile}}.g{stroke:${d.glyph}}@media (prefers-color-scheme:light){.t{fill:${l.tile}}.g{stroke:${l.glyph}}}</style><rect class="t" width="96" height="96" rx="26"/><path class="g" transform="translate(20 20) scale(2.333)" d="${GLYPHS[glyph]}" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n`;
 }
 
 /** Inline glyph for the in-app logo tile (colours come from CSS). */
