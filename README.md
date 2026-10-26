@@ -11,6 +11,7 @@ plan limits, Stripe/Razorpay billing, email, scheduled jobs, SQLite.
 | `apps/quoteforge` | 3004 | Branded quotes with GST/tax and one-click client acceptance |
 | `apps/stockwise` | 3005 | Reorder points, ABC classes, purchase orders, dead-stock cash report |
 | `apps/platecost` | 3007 | Recipe and menu costing: food-cost %, margin, price-change impact |
+| `apps/renewalradar` | 3008 | Contract and subscription renewals with cancellation-deadline reminders |
 | `apps/settlecheck` | 3006 | Browser-only two-file reconciliation (no server, no data stored) |
 
 ```bash

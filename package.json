@@ -19,6 +19,7 @@
     "start:quoteforge": "node apps/quoteforge/server.js",
     "start:stockwise": "node apps/stockwise/server.js",
     "grant": "node packages/core/bin/grant.js",
-    "start:platecost": "node apps/platecost/server.js"
+    "start:platecost": "node apps/platecost/server.js",
+    "start:renewalradar": "node apps/renewalradar/server.js"
   }
 }
