@@ -292,3 +292,23 @@ test('product names and suppliers are escaped everywhere; csv exports neutralise
     await t.close();
   }
 });
+
+test('ABC classes show on the product list, filter works, export includes them', async () => {
+  const t = await boot();
+  try {
+    const c = await ready(t);
+    const page = (await c.get('/products')).text;
+    assert.match(page, /<th[^>]*>ABC<\/th>/);
+    const a = (await c.get('/products?filter=A')).text;
+    assert.match(a, /A-100|E-500|B-200/);
+    const csv = (await c.get('/products.csv')).text;
+    assert.match(csv.split('\r\n')[0], /abc_class/);
+    const classes = t.app.db.all('SELECT sku FROM products').map((p) => p.sku);
+    assert.equal(classes.length, 5);
+    const all = ['A', 'B', 'C'].map((k) => (csv.match(new RegExp(',' + k + ',', 'g')) ?? []).length);
+    assert.ok(all[0] >= 1, 'at least one A-class SKU');
+    assert.match((await c.get('/dashboard')).text, /Class A SKUs/);
+  } finally {
+    await t.close();
+  }
+});

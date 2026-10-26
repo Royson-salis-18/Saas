@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { demandStats, parseProductCsv, parseSalesCsv, poText, purchaseOrders, recommend, summarise } from '../src/logic.js';
+import { abcClasses, demandStats, parseProductCsv, parseSalesCsv, poText, purchaseOrders, recommend, summarise } from '../src/logic.js';
 
 const TODAY = '2026-10-25';
 const product = (o = {}) => ({ sku: 'A1', name: 'Widget', supplier: 'Acme', on_hand: 50, on_order: 0, unit_cost: 1000, lead_time_days: 7, min_order_qty: 1, pack_size: 1, created_on: '2026-01-01', ...o });
@@ -165,4 +165,15 @@ test('sales csv: sums per sku/day, nets returns, rejects future and unreadable r
   assert.equal(r.skipped, 4);
   assert.match(r.errors.map((e) => e.message).join('|'), /future/);
   assert.deepEqual(parseSalesCsv('sku,qty\nA,1').missing, ['date']);
+});
+
+test('ABC classes: A covers the first 80% of consumption value, B the next 15%, C the rest', () => {
+  const mk = (id, perDay) => ({ p: { id, unit_cost: 100 }, rec: { avg: perDay / 365 } }); // value = perDay x 100
+  const rows = [mk(1, 100), mk(2, 50), mk(3, 30), mk(4, 10), mk(5, 5), mk(6, 3), mk(7, 2), mk(8, 0)];
+  const c = abcClasses(rows);
+  assert.deepEqual([...c.values()], ['A', 'A', 'A', 'B', 'C', 'C', 'C', 'C']);
+  assert.deepEqual(rows.map((r) => c.get(r.p.id)), ['A', 'A', 'A', 'B', 'C', 'C', 'C', 'C']);
+  assert.equal(abcClasses([mk(1, 0)]).get(1), 'C', 'no consumption at all is class C');
+  assert.equal(abcClasses([]).size, 0);
+  assert.equal(abcClasses([mk(1, 10)]).get(1), 'A', 'a single SKU is A');
 });
