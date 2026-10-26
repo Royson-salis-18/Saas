@@ -28,7 +28,12 @@ export function delta(text, tone = 'neutral') {
 
 /** KPI cards. Items: { label, value, hint, tone, delta, deltaTone } */
 export function statGrid(items) {
-  return html`<div class="stats">${items.map(
+  // choose a column count that leaves no orphan row, and stretch the last card across any remainder
+  const n = items.length;
+  const cols = n <= 5 ? Math.max(n, 1) : n === 6 ? 3 : 4;
+  const rest = n % cols;
+  const lastSpan = rest ? cols - rest + 1 : 1;
+  return html`<div class="stats" data-cols="${cols}" style="--cols:${cols};--span:${lastSpan}">${items.map(
     (s) => html`<div class="stat ${s.tone ? `stat-${s.tone}` : ''}">
       <div class="stat-top"><div class="stat-label">${s.label}</div>${s.delta ? delta(s.delta, s.deltaTone ?? s.tone ?? 'neutral') : ''}</div>
       <div class="stat-value">${s.value}</div>
