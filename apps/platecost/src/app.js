@@ -1,7 +1,6 @@
 import {
   HttpError, badge, card, clean, createApp, csrfField, download, emptyState, field, formatDate, formatMoney, html, pageHeader, raw,
-  parseAmount, redirect, ring, statGrid, table, toArray, toCsv, toMinor, vbars,
-} from '@saas/core';
+  parseAmount, redirect, ring, statGrid, table, toArray, toCsv, toMinor, vbars, THEMES } from '@saas/core';
 import { UNITS, costPerUnit, convert, dishCost, exTax, margin, normUnit, parseIngredientCsv, priceImpact, status, suggestPrice } from './logic.js';
 
 const MIGRATIONS = [
@@ -65,7 +64,8 @@ export function createPlateCost(options = {}) {
     slug: 'platecost',
     name: 'PlateCost',
     tagline: 'Know what every dish really costs — and earns',
-    accent: '#b8f23b',
+    accent: THEMES.platecost.accent,
+    theme: THEMES.platecost,
     glyph: 'plate',
     home: '/dashboard',
     nav: [

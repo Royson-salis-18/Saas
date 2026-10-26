@@ -20,8 +20,7 @@ import {
   statGrid,
   table,
   toCsv,
-  toMinor,
-} from '@saas/core';
+  toMinor, THEMES } from '@saas/core';
 import {
   DEFAULTS,
   abcClasses,
@@ -83,7 +82,8 @@ export function createStockWise(options = {}) {
     slug: 'stockwise',
     name: 'StockWise',
     tagline: 'Know what to reorder, how much, and what is tying up your cash',
-    accent: '#b8f23b',
+    accent: THEMES.stockwise.accent,
+    theme: THEMES.stockwise,
     glyph: 'cube',
     home: '/dashboard',
     nav: [

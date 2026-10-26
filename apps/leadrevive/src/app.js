@@ -22,8 +22,7 @@ import {
   statGrid,
   table,
   toCsv,
-  toMinor,
-} from '@saas/core';
+  toMinor, THEMES } from '@saas/core';
 import { aiDraft, DEFAULT_MODEL, getClient } from './ai.js';
 import {
   OPEN_STATUSES,
@@ -96,7 +95,8 @@ export function createLeadRevive(options = {}) {
     slug: 'leadrevive',
     name: 'LeadRevive',
     tagline: 'Win back the leads you already paid for',
-    accent: '#b8f23b',
+    accent: THEMES.leadrevive.accent,
+    theme: THEMES.leadrevive,
     glyph: 'revive',
     home: '/dashboard',
     nav: [

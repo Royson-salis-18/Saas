@@ -1,9 +1,9 @@
-:root{--bg:#F3F5EF;--surface:#fff;--text:#18181b;--muted:#71717a;--border:#e7e5e4;--border2:#d6d3d1;--accent:#4f7a0a;--bad:#b91c1c;--good:#15803d;color-scheme:light dark}
-@media(prefers-color-scheme:dark){:root{--bg:#0A0D0B;--surface:#131715;--text:#ececee;--muted:#8b8b94;--border:#26262b;--border2:#35353c;--accent:#B8F23B;--bad:#f87171;--good:#4ade80}}
+:root{--bg:#faf3f8;--surface:#fff;--text:#18181b;--muted:#71717a;--border:#e7e5e4;--border2:#d6d3d1;--accent:#b0207f;--bad:#b91c1c;--good:#15803d;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#0d090d;--surface:#171017;--text:#ececee;--muted:#8b8b94;--border:#26262b;--border2:#35353c;--accent:#ff6bd6;--bad:#f87171;--good:#4ade80}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 ui-sans-serif,Inter,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
 .wrap{width:min(1040px,100% - 2rem);margin-inline:auto}.hidden{display:none!important}
 .top{background:var(--surface);border-bottom:1px solid var(--border)}.top .wrap{display:flex;align-items:center;justify-content:space-between;min-height:52px}
-.brand{display:flex;gap:.5rem;align-items:center;font-weight:600;color:var(--text);text-decoration:none}.mark{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:#B8F23B;color:#0A0D0B}.mark svg{width:16px;height:16px}@media(prefers-color-scheme:light){.mark{background:#0A0D0B;color:#B8F23B}}
+.brand{display:flex;gap:.5rem;align-items:center;font-weight:600;color:var(--text);text-decoration:none}.mark{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:#ff6bd6;color:#1f0719}.mark svg{width:16px;height:16px}@media(prefers-color-scheme:light){.mark{background:#0d090d;color:#ff6bd6}}
 .privacy-chip{font-size:.78rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:.15rem .6rem}
 .intro{padding:3.5rem 0 2rem}h1{font-size:clamp(1.9rem,4.6vw,2.9rem);line-height:1.08;letter-spacing:-.04em;font-weight:600;margin:0 0 1rem;max-width:760px}
 .lead{color:var(--muted);font-size:1.05rem;max-width:640px;margin:0}h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 .3rem}
@@ -15,7 +15,7 @@ input[type=number]{width:6.5rem;display:inline-block;margin:0 .3rem}.cols{displa
 .loaded{margin:.6rem 0 0;font-size:.82rem;color:var(--muted)}.loaded.ok{color:var(--good)}.loaded.bad{color:var(--bad)}
 .opts{display:grid;gap:.7rem;margin:.6rem 0 1.1rem}.check{display:flex;gap:.5rem;align-items:center}
 .btn{font:inherit;font-weight:550;padding:.5rem 1rem;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer}.btn:hover{background:var(--bg)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#0A0D0B}@media(prefers-color-scheme:light){.btn.primary{color:#fff}}.btn.primary:hover{filter:brightness(1.08)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1f0719}@media(prefers-color-scheme:light){.btn.primary{color:#fff}}.btn.primary:hover{filter:brightness(1.08)}.btn:disabled{opacity:.45;cursor:not-allowed}
 .error{color:var(--bad);margin:.7rem 0 0}.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden;margin:1.5rem 0 1rem}
 .stat{padding:1rem 1.2rem;border-right:1px solid var(--border)}.stat:last-child{border-right:0}.stat .l{color:var(--muted);font-size:.78rem}.stat .v{font-size:1.5rem;font-weight:600;letter-spacing:-.03em}.stat.bad .v{color:var(--bad)}.stat .h{color:var(--muted);font-size:.78rem}
 .tabs{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.8rem}.tab{font:inherit;font-weight:500;padding:.3rem .8rem;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer}.tab.on{background:var(--surface);color:var(--text);border-color:var(--border2)}.tab .n{margin-left:.3rem;color:var(--muted)}

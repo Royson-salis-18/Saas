@@ -29,8 +29,7 @@ import {
   toArray,
   toCsv,
   toMinor,
-  safeUrl,
-} from '@saas/core';
+  safeUrl, THEMES } from '@saas/core';
 import {
   BUCKET_LABELS,
   DEFAULT_STAGES,
@@ -114,7 +113,8 @@ export function createDunningDesk(options = {}) {
     slug: 'dunningdesk',
     name: 'DunningDesk',
     tagline: 'Get paid on time without awkward emails',
-    accent: '#b8f23b',
+    accent: THEMES.dunningdesk.accent,
+    theme: THEMES.dunningdesk,
     glyph: 'invoice',
     home: '/dashboard',
     nav: [
