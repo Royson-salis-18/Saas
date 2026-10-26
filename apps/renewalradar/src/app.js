@@ -1,7 +1,6 @@
 import {
   HttpError, badge, card, clean, createApp, csrfField, download, emptyState, field, formatDate, formatMoney, html, isEmail, raw, isISODate,
-  pageHeader, parseAmount, parseDateLoose, redirect, ring, statGrid, table, toCsv, todayIn, toMinor, vbars,
-} from '@saas/core';
+  pageHeader, parseAmount, parseDateLoose, redirect, ring, statGrid, table, toCsv, todayIn, toMinor, vbars, THEMES } from '@saas/core';
 import { CYCLES, annualCost, noticeDeadline, nextReminder, nextRenewal, parseContractCsv, summarise, urgency } from './logic.js';
 
 const MIGRATIONS = [
@@ -44,7 +43,8 @@ export function createRenewalRadar(options = {}) {
     slug: 'renewalradar',
     name: 'RenewalRadar',
     tagline: 'Never miss a cancellation window again',
-    accent: '#b8f23b',
+    accent: THEMES.renewalradar.accent,
+    theme: THEMES.renewalradar,
     glyph: 'calendar',
     home: '/dashboard',
     nav: [
