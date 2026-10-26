@@ -18,8 +18,7 @@ import {
   statGrid,
   table,
   text,
-  todayIn,
-} from '@saas/core';
+  todayIn, THEMES } from '@saas/core';
 import { httpCheck, parseTargetUrl, postJson, validStatusSpec } from './netcheck.js';
 import {
   GRACE_PERIODS,
@@ -121,7 +120,8 @@ export function createPingPulse(options = {}) {
     slug: 'pingpulse',
     name: 'PingPulse',
     tagline: 'Know when a client site breaks — before the client does',
-    accent: '#b8f23b',
+    accent: THEMES.pingpulse.accent,
+    theme: THEMES.pingpulse,
     glyph: 'pulse',
     home: '/dashboard',
     nav: [

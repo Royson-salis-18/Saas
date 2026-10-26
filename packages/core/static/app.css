@@ -353,8 +353,8 @@ html[data-cur=INR] .cur-toggle [data-cur-btn=INR], html[data-cur=USD] .cur-toggl
 .vbar-fill { min-height: 3px; }
 .viz { display: grid; grid-template-columns: 1.8fr 1fr; gap: 1.1rem; margin-bottom: 1.1rem; } .viz .card { margin: 0; } @media (max-width: 900px) { .viz { grid-template-columns: 1fr; } }
 /* brand tile: Lime tile + Ink glyph in dark mode, Ink tile + Lime glyph in light mode */
-.logo { background: #B8F23B; color: #0A0D0B; }
-@media (prefers-color-scheme: light) { .logo { background: #0A0D0B; color: #B8F23B; } }
+.logo { background: var(--accent); color: var(--a-ink, #0A0D0B); }
+@media (prefers-color-scheme: light) { .logo { background: var(--text); color: var(--accent); } }
 
 /* ===== chart polish: slim graded bars, gridlines, readable strips ===== */
 .vbars { gap: .9rem; padding: 1.5rem .2rem 0; background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--border) calc(25% - 1px), var(--border) 25%) ; background-clip: content-box; position: relative; }
@@ -382,3 +382,59 @@ html[data-cur=INR] .cur-toggle [data-cur-btn=INR], html[data-cur=USD] .cur-toggl
   td, th { white-space: nowrap; }
   td:first-child { white-space: normal; min-width: 8.5rem; }
 }
+
+
+/* ===================== per-product skins (data-skin on <html>) ===================== */
+h1, h2, h3, .stat-value, .hero h1, .price-amount { font-family: var(--head, inherit); }
+body.site { background: radial-gradient(1000px 520px at 78% -140px, var(--a-glow), transparent 70%), var(--bg); }
+
+/* ember — warm, friendly: pill buttons, tinted active nav, warm top-lit cards */
+[data-skin=ember] .btn { border-radius: 999px; }
+[data-skin=ember] .side nav a.active { background: var(--a-soft); color: var(--a); box-shadow: inset 3px 0 0 var(--a); }
+[data-skin=ember] .stat { background: linear-gradient(180deg, color-mix(in srgb, var(--a) 9%, transparent), transparent 55%), var(--card-bg); }
+
+/* ledger — editorial finance: serif, flat paper cards, ruled tables, small-caps labels */
+[data-skin=ledger] .card, [data-skin=ledger] .stat, [data-skin=ledger] .feature, [data-skin=ledger] .price-card { background: var(--surface); box-shadow: none; border-color: var(--border-strong); }
+[data-skin=ledger] .side nav a.active { background: transparent; color: var(--text); box-shadow: inset 3px 0 0 var(--a); border-radius: 0 10px 10px 0; font-weight: 650; }
+[data-skin=ledger] th { font-variant: small-caps; text-transform: none; letter-spacing: .06em; font-size: .85rem; border-bottom: 2px solid var(--border-strong); }
+[data-skin=ledger] .stat-value { font-weight: 500; letter-spacing: -.02em; }
+[data-skin=ledger] .btn { border-radius: 8px; }
+
+/* terminal — ops console: monospace, hairline black panels, bracketed active nav, no glow */
+[data-skin=terminal], [data-skin=terminal] body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+[data-skin=terminal] .card, [data-skin=terminal] .stat, [data-skin=terminal] .feature, [data-skin=terminal] .price-card, [data-skin=terminal] .upsell { background: var(--surface); box-shadow: none; border-color: color-mix(in srgb, var(--a) 22%, var(--border-strong)); }
+[data-skin=terminal] .side nav a.active { background: transparent; color: var(--a); box-shadow: none; border: 1px solid var(--a); }
+[data-skin=terminal] .side nav a.active::before { content: '>'; margin-right: -.2rem; }
+[data-skin=terminal] .btn-primary { box-shadow: none; text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; }
+[data-skin=terminal] .stat-label, [data-skin=terminal] th { text-transform: uppercase; letter-spacing: .08em; font-size: .72rem; }
+[data-skin=terminal] body.site { background: var(--bg); }
+
+/* atelier — crafted documents: serif, gold hairlines, double-ruled cards */
+[data-skin=atelier] .card, [data-skin=atelier] .stat { box-shadow: inset 0 0 0 4px var(--surface), inset 0 0 0 5px color-mix(in srgb, var(--a) 22%, transparent); }
+[data-skin=atelier] .page-header { border-bottom: 1px solid color-mix(in srgb, var(--a) 35%, transparent); padding-bottom: 1rem; }
+[data-skin=atelier] .side nav a.active { background: transparent; color: var(--a); box-shadow: inset 0 -2px 0 var(--a); border-radius: 0; }
+[data-skin=atelier] .btn { border-radius: 4px; letter-spacing: .02em; }
+
+/* warehouse — dense operations: compact rows, zebra tables, left-rule nav, flat tiles */
+[data-skin=warehouse] { font-size: 13px; }
+[data-skin=warehouse] .card { padding: 1rem 1.1rem; } [data-skin=warehouse] .stat { padding: .85rem 1rem; min-height: 0; } [data-skin=warehouse] .stat-value { font-size: 1.65rem; }
+[data-skin=warehouse] td, [data-skin=warehouse] th { padding: .42rem .65rem; }
+[data-skin=warehouse] tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--text) 3.5%, transparent); }
+[data-skin=warehouse] .side nav a.active { background: var(--a-soft); color: var(--a); box-shadow: inset 3px 0 0 var(--a); border-radius: 4px 10px 10px 4px; }
+[data-skin=warehouse] .btn { border-radius: 6px; } [data-skin=warehouse] .card, [data-skin=warehouse] .stat { box-shadow: none; }
+
+/* kitchen — soft and bubbly: huge radii, tinted tiles, pill controls */
+[data-skin=kitchen] .btn, [data-skin=kitchen] .badge, [data-skin=kitchen] input, [data-skin=kitchen] select, [data-skin=kitchen] textarea { border-radius: 999px; }
+[data-skin=kitchen] textarea { border-radius: 20px; }
+[data-skin=kitchen] .stat { background: linear-gradient(135deg, color-mix(in srgb, var(--a) 14%, transparent), transparent 70%), var(--card-bg); }
+[data-skin=kitchen] .side nav a { border-radius: 999px; } [data-skin=kitchen] .side nav a.active { box-shadow: 0 10px 26px -10px var(--a-glow); }
+[data-skin=kitchen] .card { box-shadow: 0 18px 40px -26px var(--a-glow); }
+
+/* orbit — glowing night sky: gradient borders, halo on active, strong hero glow */
+[data-skin=orbit] .card, [data-skin=orbit] .stat { border-color: color-mix(in srgb, var(--a) 18%, var(--border)); background: radial-gradient(420px 160px at 100% 0, color-mix(in srgb, var(--a) 11%, transparent), transparent 70%), var(--card-bg); }
+[data-skin=orbit] .side nav a.active { box-shadow: 0 0 0 1px var(--a), 0 0 28px -4px var(--a-glow); }
+[data-skin=orbit] body.site { background: radial-gradient(900px 600px at 50% -200px, color-mix(in srgb, var(--a) 40%, transparent), transparent 70%), var(--bg); }
+
+/* workshop / scoreboard — future products */
+[data-skin=workshop] .card, [data-skin=workshop] .stat { border-left: 3px solid var(--a); border-radius: var(--radius-sm); }
+[data-skin=scoreboard] .stat-value { font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -.04em; } [data-skin=scoreboard] .side nav a.active { border-radius: 999px; }

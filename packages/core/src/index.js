@@ -22,3 +22,4 @@ export {
 } from './ui.js';
 export { effectivePlan } from './billing.js';
 export { COLORS, GLYPHS, PRODUCTS, markSvg, lockupSvg, faviconSvg } from './brand.js';
+export { THEMES } from './themes.js';
