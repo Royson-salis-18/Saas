@@ -82,7 +82,16 @@ const MIGRATIONS = [
     unit_price INTEGER NOT NULL DEFAULT 0
   );
   CREATE INDEX quote_items_quote ON quote_items (quote_id, position);
-  `,
+  `,,
+  `CREATE TABLE catalog_items (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    description TEXT NOT NULL,
+    unit TEXT NOT NULL DEFAULT '',
+    unit_price INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    UNIQUE (user_id, description COLLATE NOCASE)
+  );`
 ];
 
 export const PLANS = {
@@ -124,6 +133,20 @@ const QUOTE_JS = `(function () {
     var tax = mode === 'none' ? 0 : Math.round(taxable * num(val('tax_rate'))) / 100;
     set('t-sub', sub); set('t-disc', -disc); set('t-tax', tax); set('t-total', taxable + tax);
   }
+  var cat = [];
+  try { cat = JSON.parse(form.getAttribute('data-catalog') || '[]'); } catch (e) { cat = []; }
+  form.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('[name="desc[]"]')) return;
+    var want = e.target.value.trim().toLowerCase();
+    var hit = cat.filter(function (c) { return c.d.toLowerCase() === want; })[0];
+    if (!hit) return;
+    var row = e.target.closest('[data-repeater-row]');
+    var price = row.querySelector('[name="price[]"]');
+    var unit = row.querySelector('[name="unit[]"]');
+    if (price && !price.value) price.value = hit.p;
+    if (unit && !unit.value) unit.value = hit.u;
+    calc();
+  });
   form.addEventListener('input', calc);
   form.addEventListener('change', calc);
   calc();
@@ -142,6 +165,7 @@ export function createQuoteForge(options = {}) {
     nav: [
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/quotes', label: 'Quotes' },
+      { href: '/catalog', label: 'Saved items' },
       { href: '/settings', label: 'Business settings' },
     ],
     plans: PLANS,
@@ -191,6 +215,7 @@ export function createQuoteForge(options = {}) {
     if (!q) throw new HttpError(404, 'Quote not found');
     return q;
   };
+  const catalogOf = (userId) => db.all('SELECT * FROM catalog_items WHERE user_id = ? ORDER BY description COLLATE NOCASE LIMIT 200', userId);
   const itemsOf = (id) => db.all('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY position', id);
   const totalsOf = (q, items) =>
     computeTotals(items, {
@@ -261,7 +286,7 @@ export function createQuoteForge(options = {}) {
   }
 
   const itemRow = (it = {}) => html`<tr data-repeater-row>
-    <td><input type="text" name="desc[]" value="${it.description ?? ''}" placeholder="Description" aria-label="Description"></td>
+    <td><input type="text" name="desc[]" list="catalog" value="${it.description ?? ''}" placeholder="Description" aria-label="Description"></td>
     <td style="width:6rem"><input type="number" step="any" min="0" name="qty[]" value="${it.qty ?? 1}" aria-label="Quantity"></td>
     <td style="width:6rem"><input type="text" name="unit[]" value="${it.unit ?? ''}" placeholder="hrs, pcs…" aria-label="Unit"></td>
     <td style="width:9rem"><input type="number" step="any" min="0" name="price[]" value="${it.unit_price != null ? it.unit_price / 100 : ''}" aria-label="Unit price"></td>
@@ -274,7 +299,8 @@ export function createQuoteForge(options = {}) {
     const tax = q.id ? { mode: q.tax_mode, rate: q.tax_rate } : taxDefaults(ctx);
     const rows = items.length ? items : [{}];
     return html`${error ? html`<div class="flash flash-err">${error}</div>` : ''}
-    <form method="post" action="${editing ? `/quotes/${q.id}/edit` : '/quotes'}" data-quote-form data-currency="${q.currency}">${csrfField(ctx)}
+    <form method="post" action="${editing ? `/quotes/${q.id}/edit` : '/quotes'}" data-quote-form data-currency="${q.currency}" data-catalog="${JSON.stringify(catalogOf(ctx.user.id).map((c) => ({ d: c.description, u: c.unit, p: c.unit_price / 100 })))}">${csrfField(ctx)}
+      <datalist id="catalog">${catalogOf(ctx.user.id).map((c) => html`<option value="${c.description}"></option>`)}</datalist>
       ${card('Customer', html`
         <div class="row">
           ${field({ label: 'Customer / company', name: 'customer_name', value: q.customer_name ?? '', required: true })}
@@ -444,6 +470,46 @@ export function createQuoteForge(options = {}) {
       { label: 'status', value: (r) => effectiveStatus(r, today) }, { key: 'currency', label: 'currency' }, { label: 'subtotal', value: (r) => r.subtotal / 100 },
       { label: 'tax', value: (r) => r.tax_total / 100 }, { label: 'total', value: (r) => r.total / 100 }, { key: 'valid_until', label: 'valid_until' },
     ]));
+  });
+
+  // ---- saved items (catalog) ---------------------------------------------------
+  app.get('/catalog', (ctx) => {
+    const items = catalogOf(ctx.user.id);
+    return ctx.page(
+      'Saved items',
+      html`${pageHeader('Saved items', '', 'Services and products you quote often. Start typing a saved description in a quote and the unit and price fill in.')}
+      ${card('Add or update an item', html`<form method="post" action="/catalog" class="row">${csrfField(ctx)}
+        ${field({ label: 'Description', name: 'description', required: true })}
+        ${field({ label: 'Unit', name: 'unit', placeholder: 'hrs, sq ft, pcs…' })}
+        ${field({ label: `Unit price (${ctx.user.currency})`, name: 'price', required: true, attrs: { inputmode: 'decimal' } })}
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="submit">Save item</button></div></form>
+        <p class="help">Saving a description that already exists updates its price.</p>`)}
+      ${card('', table({
+        columns: [
+          { label: 'Description', render: (c) => c.description }, { label: 'Unit', render: (c) => c.unit || '—' },
+          { label: 'Unit price', align: 'right', render: (c) => formatMoney(c.unit_price, ctx.user.currency) },
+          { label: '', render: (c) => html`<form method="post" action="/catalog/${c.id}/delete" class="inline">${csrfField(ctx)}<button class="btn btn-sm" type="submit">Delete</button></form>` },
+        ],
+        rows: items, empty: 'No saved items yet.',
+      }))}`,
+    );
+  });
+
+  app.post('/catalog', (ctx) => {
+    const description = clean(ctx.body.description, 200);
+    const price = parseAmount(ctx.body.price);
+    if (!description || !Number.isFinite(price) || price < 0 || price > 1e9) return redirect('/catalog', { err: 'Enter a description and a price of zero or more.' });
+    const exists = db.get('SELECT id FROM catalog_items WHERE user_id = ? AND description = ? COLLATE NOCASE', ctx.user.id, description);
+    if (!exists && db.get('SELECT COUNT(*) AS n FROM catalog_items WHERE user_id = ?', ctx.user.id).n >= 200) return redirect('/catalog', { err: 'You can save up to 200 items. Delete some first.' });
+    if (exists) db.run('UPDATE catalog_items SET unit = ?, unit_price = ? WHERE id = ?', clean(ctx.body.unit, 20), toMinor(price), exists.id);
+    else db.run('INSERT INTO catalog_items (user_id, description, unit, unit_price, created_at) VALUES (?, ?, ?, ?, ?)', ctx.user.id, description, clean(ctx.body.unit, 20), toMinor(price), ctx.now());
+    return redirect('/catalog', { ok: exists ? 'Item updated.' : 'Item saved.' });
+  });
+
+  app.post('/catalog/:id/delete', (ctx) => {
+    const r = db.run('DELETE FROM catalog_items WHERE id = ? AND user_id = ?', Number(ctx.params.id), ctx.user.id);
+    if (!r.changes) throw new HttpError(404, 'Item not found');
+    return redirect('/catalog', { ok: 'Item deleted.' });
   });
 
   app.get('/quotes/new', (ctx) => {
