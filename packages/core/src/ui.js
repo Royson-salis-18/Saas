@@ -137,13 +137,25 @@ function navLink(ctx, item) {
 }
 
 /** Wrap page content in the shared document shell. */
+const HEAD_FONTS = {
+  sans: 'inherit',
+  serif: 'Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif',
+  mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+};
+const cssVars = (o = {}) => Object.entries(o).map(([k, v]) => `--${k}:${v}`).join(';');
+/** Per-product palette: dark and light surfaces, radius, heading font. Values come from our own config, never user input. */
+export function themeStyle(t) {
+  if (!t) return '';
+  return `<style>:root{${cssVars(t.dark)};--radius:${t.radius ?? 20}px;--radius-sm:${Math.round((t.radius ?? 20) * 0.6)}px;--head:${HEAD_FONTS[t.font] ?? HEAD_FONTS.sans};--a-ink:${t.ink ?? '#0A0D0B'}}@media (prefers-color-scheme:light){:root{${cssVars(t.light)};--a-ink:${t.lightInk ?? '#ffffff'}}}</style>`;
+}
+
 export function layout(ctx, { title, body, description, status = 200, noindex = true, scripts = [] }) {
   const { config } = ctx.app;
   const fullTitle = title && title !== config.name ? `${title} · ${config.name}` : `${config.name} — ${config.tagline}`;
   const cur = ctx.user?.currency ?? ctx.guessCurrency();
   const flash = ctx.flash;
   const doc = html`<!doctype html>
-<html lang="en" data-cur="${cur}" style="--accent:${config.accent}">
+<html lang="en" data-cur="${cur}" data-skin="${config.theme?.skin ?? 'default'}" style="--accent:${config.theme?.accent ?? config.accent}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -155,6 +167,7 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
   ${ctx.csrf ? html`<meta name="csrf-token" content="${ctx.csrf}">` : ''}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
+  ${raw(themeStyle(config.theme))}
   <script src="/static/app.js" defer></script>
   ${scripts.map((s) => html`<script src="${s}" defer></script>`)}
 </head>
