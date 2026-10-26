@@ -4,8 +4,13 @@
   "private": true,
   "description": "Five small, profitable B2B SaaS products on one zero-dependency Node platform.",
   "type": "module",
-  "engines": { "node": ">=22.13" },
-  "workspaces": ["packages/*", "apps/*"],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test \"packages/*/test/*.test.js\" \"apps/*/test/*.test.js\"",
     "start:leadrevive": "node apps/leadrevive/server.js",
@@ -13,6 +18,7 @@
     "start:pingpulse": "node apps/pingpulse/server.js",
     "start:quoteforge": "node apps/quoteforge/server.js",
     "start:stockwise": "node apps/stockwise/server.js",
-    "grant": "node packages/core/bin/grant.js"
+    "grant": "node packages/core/bin/grant.js",
+    "start:platecost": "node apps/platecost/server.js"
   }
 }
