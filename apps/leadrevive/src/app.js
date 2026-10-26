@@ -1,5 +1,6 @@
 import {
   HttpError,
+  addDays,
   badge,
   card,
   ring,
@@ -75,7 +76,8 @@ const MIGRATIONS = [
   );
   CREATE INDEX followups_lead ON followups (lead_id, status);
   CREATE INDEX followups_user_time ON followups (user_id, created_at);
-  `,
+  `,,
+  `ALTER TABLE leads ADD COLUMN snoozed_until TEXT;`
 ];
 
 export const PLANS = {
@@ -388,7 +390,11 @@ export function createLeadRevive(options = {}) {
         ${card('Update status', html`<div class="actions">
           ${STATUSES.filter((s) => s !== lead.status).map((s) => action('status', `Mark ${STATUS_LABEL[s].toLowerCase()}`, 'btn btn-sm', { status: s }))}
           ${action('dnc', lead.do_not_contact ? 'Allow contact' : 'Do not contact', 'btn btn-sm')}
-        </div>${wa ? html`<p class="help">WhatsApp: <a href="https://wa.me/${wa}" target="_blank" rel="noopener">open chat</a></p>` : ''}`)}
+        </div>
+        ${OPEN_STATUSES.includes(lead.status) ? html`<form method="post" action="/leads/${lead.id}/snooze" class="inline-form" style="margin-top:.9rem">${csrfField(ctx)}
+          <label for="sn">Snooze for</label><select id="sn" name="days">${[[3, '3 days'], [7, '1 week'], [14, '2 weeks'], [30, '1 month'], [90, '3 months']].map(([d, l]) => html`<option value="${d}">${l}</option>`)}</select>
+          <button class="btn btn-sm" type="submit">Snooze</button>${lead.snoozed_until && lead.snoozed_until > today ? html` ${badge(`Snoozed until ${formatDate(lead.snoozed_until)}`, 'info')}` : ''}</form>
+          ${lead.snoozed_until && lead.snoozed_until > today ? action('unsnooze', 'Wake now', 'btn btn-sm') : ''}` : ''}${wa ? html`<p class="help">WhatsApp: <a href="https://wa.me/${wa}" target="_blank" rel="noopener">open chat</a></p>` : ''}`)}
         ${card('Follow-up history', table({
           columns: [
             { label: 'When', render: (h) => (h.sent_at ? new Date(h.sent_at).toISOString().slice(0, 10) : 'draft') },
@@ -426,6 +432,18 @@ export function createLeadRevive(options = {}) {
     return redirect(`/leads/${lead.id}`, { ok: `Marked ${STATUS_LABEL[status].toLowerCase()}.` });
   });
 
+  app.post('/leads/:id/snooze', (ctx) => {
+    const lead = getLead(ctx, ctx.params.id);
+    const days = [3, 7, 14, 30, 90].includes(Number(ctx.body.days)) ? Number(ctx.body.days) : 7;
+    const until = addDays(ctx.today(), days);
+    db.run(`UPDATE leads SET snoozed_until = ? WHERE id = ?`, until, lead.id);
+    db.run(`UPDATE followups SET status = 'discarded' WHERE lead_id = ? AND status = 'draft'`, lead.id);
+    return redirect(`/leads/${lead.id}`, { ok: `Snoozed until ${formatDate(until)}. It will reappear in your cold list then.` });
+  });
+  app.post('/leads/:id/unsnooze', (ctx) => {
+    db.run('UPDATE leads SET snoozed_until = NULL WHERE id = ? AND user_id = ?', getLead(ctx, ctx.params.id).id, ctx.user.id);
+    return redirect(`/leads/${ctx.params.id}`, { ok: 'Lead is active again.' });
+  });
   app.post('/leads/:id/dnc', (ctx) => {
     const lead = getLead(ctx, ctx.params.id);
     db.run('UPDATE leads SET do_not_contact = ? WHERE id = ?', lead.do_not_contact ? 0 : 1, lead.id);

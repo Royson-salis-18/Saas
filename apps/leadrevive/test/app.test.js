@@ -323,3 +323,29 @@ test('lead notes with HTML are escaped everywhere they render', async () => {
     await t.close();
   }
 });
+
+test('snoozing hides a lead from the cold list and bulk drafts until the date, then it returns', async () => {
+  const t = await boot();
+  try {
+    const c = await ready(t);
+    const id = t.app.db.get(`SELECT id FROM leads WHERE name = 'Asha Rao'`).id;
+    assert.match((await c.get('/dashboard')).text, /Asha Rao/);
+    await c.post(`/leads/${id}/snooze`, { days: '14' });
+    assert.equal(t.app.db.get('SELECT snoozed_until AS s FROM leads WHERE id = ?', id).s, '2026-11-08');
+    assert.ok(!(await c.get('/dashboard')).text.includes('Asha Rao'));
+    await c.post('/drafts/generate', { limit: '10' });
+    assert.equal(t.app.db.get(`SELECT COUNT(*) AS n FROM followups WHERE lead_id = ?`, id).n, 0, 'no drafts for snoozed leads');
+    assert.match((await c.get(`/leads/${id}`)).text, /Snoozed until 8 Nov 2026/);
+    t.clock.t += 15 * 86400000;
+    assert.match((await c.get('/dashboard')).text, /Asha Rao/, 'back after the snooze ends');
+    await c.post(`/leads/${id}/snooze`, { days: '999' });
+    assert.equal(t.app.db.get('SELECT snoozed_until AS s FROM leads WHERE id = ?', id).s, '2026-11-16', 'unknown durations fall back to a week');
+    await c.post(`/leads/${id}/unsnooze`);
+    assert.equal(t.app.db.get('SELECT snoozed_until AS s FROM leads WHERE id = ?', id).s, null);
+    const other = t.client();
+    await other.signup('o@example.com');
+    assert.equal((await other.post(`/leads/${id}/snooze`, { days: '7' })).status, 404);
+  } finally {
+    await t.close();
+  }
+});

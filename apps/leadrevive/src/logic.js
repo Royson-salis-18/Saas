@@ -17,6 +17,7 @@ export function daysSinceContact(lead, today) {
 }
 
 export function isStale(lead, today, staleDays = 7) {
+  if (lead.snoozed_until && today < lead.snoozed_until) return false; // snoozed: hidden until that date
   return OPEN_STATUSES.includes(lead.status) && !lead.do_not_contact && daysSinceContact(lead, today) >= staleDays;
 }
 
