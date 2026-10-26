@@ -14,6 +14,6 @@
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test \"packages/*/test/*.test.js\" \"apps/*/test/*.test.js\"",
     "grant": "node packages/core/bin/grant.js",
-    "start:platecost": "node apps/platecost/server.js"
+    "start:renewalradar": "node apps/renewalradar/server.js"
   }
 }
