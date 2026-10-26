@@ -14,6 +14,10 @@ export const GLYPHS = {
   invoice: 'M6 3h9l4 4v14H6zM9 13.2l2.4 2.4L16 11',
   spark: 'M12 3l2.1 5.9L20 11l-5.9 2.1L12 19l-2.1-5.9L4 11l5.9-2.1z',
   cube: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9',
+  calendar: 'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M8 3v4M16 3v4M9 15.5l2 2 4-4',
+  wrench: 'M14.7 6.3a4.5 4.5 0 0 0-5.7 5.7L3.5 17.5a1.8 1.8 0 0 0 2.5 2.5L11.500 14.500a4.500 4.500 0 0 0 5.700-5.700l-2.700 2.700-2.300-.5-.5-2.300z',
+  scorecard: 'M5 20V11M12 20V4M19 20v-6',
+  plate: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
   match: 'M10 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM14 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z',
 };
 
@@ -24,6 +28,10 @@ export const PRODUCTS = {
   quoteforge: { name: 'QuoteForge', glyph: 'spark' },
   stockwise: { name: 'StockWise', glyph: 'cube' },
   settlecheck: { name: 'SettleCheck', glyph: 'match' },
+  platecost: { name: 'PlateCost', glyph: 'plate' },
+  renewalradar: { name: 'RenewalRadar', glyph: 'calendar' },
+  servicedue: { name: 'ServiceDue', glyph: 'wrench' },
+  supplierscore: { name: 'SupplierScore', glyph: 'scorecard' },
 };
 
 const FONT = "ui-sans-serif, Inter, -apple-system, 'Segoe UI', Roboto, sans-serif";
