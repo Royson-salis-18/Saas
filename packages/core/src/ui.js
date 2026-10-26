@@ -171,8 +171,8 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
           : html`<div class="upsell"><strong>${ctx.planInfo.label} plan</strong><span>Thanks for supporting ${config.name}.</span><a class="btn btn-sm" href="/billing">Manage billing</a></div>`}
         <div class="me"><span class="avatar">${(ctx.user.name || ctx.user.email).slice(0, 1).toUpperCase()}</span>
           <div class="me-text"><strong>${ctx.user.name || 'Account'}</strong><span>${ctx.user.email}</span></div></div>
-        <div class="me-links"><a href="/account">${icon('user')}Account</a><a href="/billing">${icon('card')}Billing</a>
-          <form method="post" action="/logout" class="inline">${csrfField(ctx)}<button class="link" type="submit">${icon('out')}Log out</button></form></div>
+        <div class="me-links"><a href="/account" aria-label="Account" title="Account">${icon('user')}<span>Account</span></a><a href="/billing" aria-label="Billing" title="Billing">${icon('card')}<span>Billing</span></a>
+          <form method="post" action="/logout" class="inline">${csrfField(ctx)}<button class="link" type="submit" aria-label="Log out" title="Log out">${icon('out')}<span>Log out</span></button></form></div>
       </aside>
       <div class="content">
         <main class="container">${flash ? html`<div class="flash flash-${flash.type}" role="status">${flash.msg}</div>` : ''}${body}</main>
