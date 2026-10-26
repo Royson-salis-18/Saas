@@ -247,7 +247,7 @@ h1 { font-size: 1.7rem; } h2 { font-size: .8rem; } a { color: var(--a); }
 .content main.container { width: min(1180px, 100% - 3rem); padding: 2rem 0 3rem; flex: 1; }
 @media (max-width: 880px) {
   .shell { display: block; } .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: .7rem; } .brand { padding: 0 .5rem; }
-  .side-label, .upsell, .side-spacer, .me-text { display: none; } .side nav { display: flex; overflow-x: auto; order: 3; flex-basis: 100%; } .me { border: 0; padding: 0; margin-left: auto; } .me-links { display: flex; order: 2; } .me-links a span, .me-links button span { display: none; }
+  .side-label, .upsell, .side-spacer, .me-text { display: none; } .side nav { display: flex; gap: .25rem; overflow-x: auto; scrollbar-width: none; order: 3; flex-basis: 100%; margin-top: .4rem; } .side nav::-webkit-scrollbar { display: none; } .side nav a { white-space: nowrap; flex: none; } .me { border: 0; padding: 0; margin-left: auto; } .me-links { display: flex; order: 2; } .me-links a span, .me-links button span { display: none; }
   .content main.container { width: min(1180px, 100% - 1.5rem); }
 }
 
@@ -373,3 +373,12 @@ html[data-cur=INR] .cur-toggle [data-cur-btn=INR], html[data-cur=USD] .cur-toggl
 .viz .card { padding-bottom: 1.2rem; }
 .stat-value { font-size: 2rem; } .stat { min-height: 118px; }
 .stat-value:empty { display: none; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); gap: .7rem; }
+  .stat { padding: .9rem; min-height: 0; }
+  .stat-value { font-size: 1.5rem; }
+  td, th { white-space: nowrap; }
+  td:first-child { white-space: normal; min-width: 8.5rem; }
+}
