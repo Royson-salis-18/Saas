@@ -28,8 +28,7 @@ import {
   toArray,
   toCsv,
   todayIn,
-  toMinor,
-} from '@saas/core';
+  toMinor, THEMES } from '@saas/core';
 import { TAX_MODES, computeTotals, effectiveStatus, formatQuoteNumber, needsFollowUp, parseItems, pipelineStats } from './logic.js';
 
 const MIGRATIONS = [
@@ -159,7 +158,8 @@ export function createQuoteForge(options = {}) {
     slug: 'quoteforge',
     name: 'QuoteForge',
     tagline: 'Send quotes clients can accept in one click',
-    accent: '#b8f23b',
+    accent: THEMES.quoteforge.accent,
+    theme: THEMES.quoteforge,
     glyph: 'spark',
     home: '/dashboard',
     nav: [
