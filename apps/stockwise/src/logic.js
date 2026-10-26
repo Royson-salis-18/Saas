@@ -76,6 +76,24 @@ export function recommend(p, stats, settings, today) {
   };
 }
 
+/**
+ * ABC classification by annual consumption value (average daily units x 365 x unit cost).
+ * A = the SKUs that make up the first 80% of value, B = the next 15%, C = the rest (and anything with no
+ * consumption value). Returns Map(productId -> 'A' | 'B' | 'C').
+ */
+export function abcClasses(rows) {
+  const items = rows.map((r) => ({ id: r.p.id, v: r.rec.avg * 365 * r.p.unit_cost })).sort((a, b) => b.v - a.v);
+  const total = items.reduce((n, x) => n + Math.max(0, x.v), 0);
+  const out = new Map();
+  let before = 0;
+  for (const x of items) {
+    if (x.v <= 0 || total === 0) out.set(x.id, 'C');
+    else out.set(x.id, before < 0.8 * total ? 'A' : before < 0.95 * total ? 'B' : 'C');
+    before += Math.max(0, x.v);
+  }
+  return out;
+}
+
 export const STATUS_ORDER = ['stockout', 'reorder_now', 'reorder_soon', 'overstock', 'dead', 'ok', 'no_data'];
 export const STATUS_LABEL = { stockout: 'Out of stock', reorder_now: 'Reorder now', reorder_soon: 'Reorder soon', overstock: 'Overstocked', dead: 'Dead stock', ok: 'Healthy', no_data: 'No sales yet' };
 export const STATUS_TONE = { stockout: 'bad', reorder_now: 'bad', reorder_soon: 'warn', overstock: 'info', dead: 'neutral', ok: 'good', no_data: 'neutral' };

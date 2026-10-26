@@ -100,7 +100,8 @@ const MIGRATIONS = [
     slug TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE
   );
-  `,
+  `,,
+  `ALTER TABLE monitors ADD COLUMN maintenance_until INTEGER;`
 ];
 
 export const PLANS = {
@@ -253,7 +254,7 @@ export function createPingPulse(options = {}) {
 
   async function checkMonitor(id) {
     const m = db.get(`SELECT * FROM monitors WHERE id = ? AND type = 'http'`, id);
-    if (!m) return null;
+    if (!m || (m.maintenance_until && m.maintenance_until > app.now())) return null;
     const result = await httpCheck({
       url: m.url,
       method: m.method,
@@ -270,7 +271,7 @@ export function createPingPulse(options = {}) {
 
   async function checkHeartbeats() {
     const t = app.now();
-    for (const m of db.all(`SELECT * FROM monitors WHERE paused = 0 AND type = 'heartbeat' AND state != 'down'`)) {
+    for (const m of db.all(`SELECT * FROM monitors WHERE paused = 0 AND type = 'heartbeat' AND state != 'down' AND (maintenance_until IS NULL OR maintenance_until <= ?)`, t)) {
       const hb = heartbeatStatus(m, t);
       if (hb.late) {
         const never = m.last_ping_at === null;
@@ -281,7 +282,7 @@ export function createPingPulse(options = {}) {
 
   /** Run every check that is due. Returns the number of HTTP checks executed. */
   async function runDueChecks({ limit = 60, concurrency = 10 } = {}) {
-    const due = db.all(`SELECT id FROM monitors WHERE paused = 0 AND type = 'http' AND next_check_at <= ? ORDER BY next_check_at LIMIT ?`, app.now(), limit);
+    const due = db.all(`SELECT id FROM monitors WHERE paused = 0 AND type = 'http' AND next_check_at <= ? AND (maintenance_until IS NULL OR maintenance_until <= ?) ORDER BY next_check_at LIMIT ?`, app.now(), app.now(), limit);
     for (let i = 0; i < due.length; i += concurrency) {
       await Promise.all(due.slice(i, i + concurrency).map((d) => checkMonitor(d.id).catch((err) => console.error('[pingpulse] check failed', err))));
     }
@@ -356,7 +357,7 @@ export function createPingPulse(options = {}) {
       <div class="viz">${card('Response time by monitor (ms)', vbars({ height: 170, items: monitors.filter((m) => m.last_latency_ms != null).slice(0, 10).map((m) => ({ label: m.name.slice(0, 10), value: m.last_latency_ms, tone: m.state === 'down' ? 'bad' : '' })) }))}${card('Uptime, last 24h', html`${(() => { const t = [...view.values()].reduce((a, v) => ({ ok: a.ok + v.ok, n: a.n + v.n }), { ok: 0, n: 0 }); const u = t.n ? pct(t.ok, t.n) : null; return ring({ value: u ?? 0, max: 100, text: u === null ? '—' : `${u}%`, label: 'all monitors' }); })()}<p class="muted center">${down ? `${down} monitor${down === 1 ? '' : 's'} down now` : 'Everything is up'}</p>`, { className: 'ring-card' })}</div>
       ${card('', table({
         columns: [
-          { label: 'Status', render: (m) => (m.paused ? badge('Paused', 'neutral') : badge(STATE_LABEL[m.state], STATE_TONE[m.state])) },
+          { label: 'Status', render: (m) => (m.paused ? badge('Paused', 'neutral') : m.maintenance_until > app.now() ? badge('Maintenance', 'info') : badge(STATE_LABEL[m.state], STATE_TONE[m.state])) },
           { label: 'Monitor', render: (m) => html`<a href="/monitors/${m.id}"><strong>${m.name}</strong></a><span class="sub">${targetOf(m)}</span>` },
           { label: 'Last 24h', render: (m) => bars(view.get(m.id)?.cells ?? Array(48).fill('none')) },
           { label: 'Uptime', align: 'right', render: (m) => { const v = view.get(m.id); return v ? `${pct(v.ok, v.n)}%` : '—'; } },
@@ -477,8 +478,9 @@ export function createPingPulse(options = {}) {
     return ctx.page(
       m.name,
       html`${pageHeader(
-        html`${m.name} ${m.paused ? badge('Paused', 'neutral') : badge(STATE_LABEL[m.state], STATE_TONE[m.state])}`,
-        html`${m.type === 'http' ? act('check', 'Check now') : ''}${m.paused ? act('resume', 'Resume') : act('pause', 'Pause')}`,
+        html`${m.name} ${m.paused ? badge('Paused', 'neutral') : m.maintenance_until > app.now() ? badge('Maintenance', 'info') : badge(STATE_LABEL[m.state], STATE_TONE[m.state])}`,
+        html`${m.type === 'http' ? act('check', 'Check now') : ''}${m.paused ? act('resume', 'Resume') : act('pause', 'Pause')}
+          ${m.maintenance_until > now ? act('maintenance-end', 'End maintenance', 'btn btn-sm') : html`<form method="post" action="/monitors/${m.id}/maintenance" class="inline-form">${csrfField(ctx)}<select name="hours" aria-label="Maintenance length">${[[1, '1 hour'], [2, '2 hours'], [4, '4 hours'], [8, '8 hours'], [24, '24 hours']].map(([h, l]) => html`<option value="${h}">${l}</option>`)}</select><button class="btn btn-sm" type="submit">Maintenance window</button></form>`}`,
         m.type === 'http' ? m.url : 'Cron-job heartbeat',
       )}
       ${m.last_error && m.state === 'down' ? html`<div class="flash flash-err">${m.last_error}</div>` : ''}
@@ -552,6 +554,19 @@ export function createPingPulse(options = {}) {
     db.run('UPDATE monitors SET paused = 0, next_check_at = ?, last_ping_at = CASE WHEN type = \'heartbeat\' THEN ? ELSE last_ping_at END WHERE id = ?', ctx.now(), ctx.now(), m.id);
     return redirect(`/monitors/${m.id}`, { ok: 'Resumed.' });
   });
+  app.post('/monitors/:id/maintenance', (ctx) => {
+    const m = getMonitor(ctx, ctx.params.id);
+    const hours = [1, 2, 4, 8, 24].includes(Number(ctx.body.hours)) ? Number(ctx.body.hours) : 1;
+    const until = ctx.now() + hours * 3600e3;
+    // heartbeat clocks restart when the window ends so the quiet period doesn't read as a missed job
+    db.run(`UPDATE monitors SET maintenance_until = ?, last_ping_at = CASE WHEN type = 'heartbeat' THEN ? ELSE last_ping_at END WHERE id = ?`, until, until, m.id);
+    return redirect(`/monitors/${m.id}`, { ok: `Maintenance for ${hours} hour${hours === 1 ? '' : 's'}: no checks, incidents or alerts until it ends.` });
+  });
+  app.post('/monitors/:id/maintenance-end', (ctx) => {
+    const m = getMonitor(ctx, ctx.params.id);
+    db.run(`UPDATE monitors SET maintenance_until = NULL, next_check_at = ?, last_ping_at = CASE WHEN type = 'heartbeat' THEN ? ELSE last_ping_at END WHERE id = ?`, ctx.now(), ctx.now(), m.id);
+    return redirect(`/monitors/${m.id}`, { ok: 'Maintenance ended. Monitoring has resumed.' });
+  });
   app.post('/monitors/:id/delete', (ctx) => {
     db.run('DELETE FROM monitors WHERE id = ?', getMonitor(ctx, ctx.params.id).id);
     return redirect('/dashboard', { ok: 'Monitor deleted.' });
@@ -570,6 +585,7 @@ export function createPingPulse(options = {}) {
     if (!m) return text('unknown ping token', 404);
     if (m.paused) return text('paused');
     const t = ctx.now();
+    if (failure && m.maintenance_until > t) return text('in maintenance; failure ignored');
     if (failure) {
       await applyResult(m, { ok: false, error: 'Job reported a failure' }, { threshold: 1 });
     } else {
@@ -634,7 +650,7 @@ export function createPingPulse(options = {}) {
     if (!page) throw new HttpError(404, 'Status page not found');
     let s = {};
     try { s = JSON.parse(page.settings || '{}'); } catch { /* defaults */ }
-    const monitors = db.all('SELECT id, name, state, paused FROM monitors WHERE user_id = ? AND public = 1 ORDER BY name COLLATE NOCASE', page.user_id);
+    const monitors = db.all('SELECT id, name, state, paused, maintenance_until FROM monitors WHERE user_id = ? AND public = 1 ORDER BY name COLLATE NOCASE', page.user_id);
     const now = ctx.now();
     const days = Array.from({ length: 30 }, (_, i) => utcDay(now - (29 - i) * DAY));
     const stats = db.all(
@@ -643,7 +659,7 @@ export function createPingPulse(options = {}) {
     );
     const byMonitor = new Map();
     for (const r of stats) (byMonitor.get(r.mid) ?? byMonitor.set(r.mid, new Map()).get(r.mid)).set(r.day, r);
-    const active = monitors.filter((m) => !m.paused);
+    const active = monitors.filter((m) => !m.paused && !(m.maintenance_until > now));
     const downCount = active.filter((m) => m.state === 'down').length;
     const headline = !active.length ? 'No monitors yet' : downCount === 0 ? 'All systems operational' : downCount === active.length ? 'Major outage' : 'Partial outage';
     const tone = downCount === 0 ? 'good' : downCount === active.length ? 'bad' : 'warn';
@@ -661,7 +677,7 @@ export function createPingPulse(options = {}) {
           const rows = byMonitor.get(m.id) ?? new Map();
           const cells = days.map((d) => { const r = rows.get(d); if (!r || !r.total) return 'none'; const p = r.ok / r.total; return p >= 0.999 ? 'up' : p >= 0.95 ? 'warn' : 'down'; });
           const tot = [...rows.values()].reduce((a, r) => ({ n: a.n + r.total, ok: a.ok + r.ok }), { n: 0, ok: 0 });
-          return card('', html`<div class="page-header" style="margin-bottom:.4rem"><div><strong>${m.name}</strong></div><div>${m.paused ? badge('Paused', 'neutral') : badge(m.state === 'down' ? 'Down' : m.state === 'up' ? 'Operational' : 'Pending', STATE_TONE[m.state])} <span class="muted">${tot.n ? `${pct(tot.ok, tot.n)}% (30 days)` : ''}</span></div></div>${bars(cells)}`);
+          return card('', html`<div class="page-header" style="margin-bottom:.4rem"><div><strong>${m.name}</strong></div><div>${m.paused ? badge('Paused', 'neutral') : m.maintenance_until > app.now() ? badge('Maintenance', 'info') : badge(m.state === 'down' ? 'Down' : m.state === 'up' ? 'Operational' : 'Pending', STATE_TONE[m.state])} <span class="muted">${tot.n ? `${pct(tot.ok, tot.n)}% (30 days)` : ''}</span></div></div>${bars(cells)}`);
         })}
         <h2 class="section-title">Past incidents (14 days)</h2>
         ${incidents.length

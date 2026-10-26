@@ -24,6 +24,7 @@ import {
 } from '@saas/core';
 import {
   DEFAULTS,
+  abcClasses,
   STATUS_LABEL,
   STATUS_ORDER,
   STATUS_TONE,
@@ -142,12 +143,15 @@ export function createStockWise(options = {}) {
         .all(`SELECT s.product_id AS pid, MIN(s.day) AS first_day, MAX(s.day) AS last_day FROM sales s JOIN products p ON p.id = s.product_id WHERE p.user_id = ? GROUP BY s.product_id`, userId)
         .map((r) => [r.pid, r]),
     );
-    return products.map((p) => {
+    const rows = products.map((p) => {
       const span = spans.get(p.id);
       const w = windowed.get(p.id);
       const stats = demandStats(span ? { total: w?.total ?? 0, sumsq: w?.sumsq ?? 0, first_day: span.first_day, last_day: span.last_day } : null, today, win);
       return { p, stats, rec: recommend(p, stats, settings, today) };
     });
+    const classes = abcClasses(rows);
+    for (const r of rows) r.abc = classes.get(r.p.id);
+    return rows;
   }
 
   const getProduct = (ctx, id) => {
@@ -180,6 +184,7 @@ export function createStockWise(options = {}) {
         { label: 'Need ordering now', value: s.stockout + s.reorderNow, tone: s.stockout + s.reorderNow ? 'bad' : 'good', hint: `${s.stockout} out of stock · est. ${m(s.reorderCost)}` },
         { label: 'Reorder soon', value: s.reorderSoon, tone: s.reorderSoon ? 'warn' : '' },
         { label: 'Stock value', value: m(s.stockValue), hint: `${s.skus} SKUs` },
+        { label: 'Class A SKUs', value: rows.filter((r) => r.abc === 'A').length, hint: 'about 80% of consumption value' },
         { label: 'Cash tied up in excess / dead stock', value: m(s.tiedUp), tone: s.tiedUp ? 'warn' : 'good', hint: `${s.overstock} overstocked · ${s.dead} dead` },
       ])}
       <div class="viz">${card('Stock health by status', vbars({ height: 170, items: [{ label: 'Healthy', value: rows.length - s.stockout - s.reorderNow - s.reorderSoon - s.overstock - s.dead - rows.filter((r) => r.rec.status === 'no_data').length }, { label: 'Soon', value: s.reorderSoon, tone: 'warn' }, { label: 'Reorder', value: s.reorderNow, tone: 'bad' }, { label: 'Out', value: s.stockout, tone: 'bad' }, { label: 'Excess', value: s.overstock }, { label: 'Dead', value: s.dead }] }))}
@@ -210,7 +215,7 @@ export function createStockWise(options = {}) {
   });
 
   // ---- products ------------------------------------------------------------------
-  const FILTERS = [['all', 'All'], ['action', 'Needs action'], ['stockout', 'Out of stock'], ['reorder_soon', 'Soon'], ['overstock', 'Overstocked'], ['dead', 'Dead stock']];
+  const FILTERS = [['all', 'All'], ['action', 'Needs action'], ['stockout', 'Out of stock'], ['reorder_soon', 'Soon'], ['overstock', 'Overstocked'], ['dead', 'Dead stock'], ['A', 'Class A'], ['B', 'Class B'], ['C', 'Class C']];
 
   app.get('/products', (ctx) => {
     const filter = FILTERS.some(([k]) => k === ctx.query.filter) ? ctx.query.filter : 'all';
@@ -219,6 +224,7 @@ export function createStockWise(options = {}) {
       .filter((r) => {
         const st = r.rec.status;
         if (filter === 'action' && !['stockout', 'reorder_now'].includes(st)) return false;
+        if (['A', 'B', 'C'].includes(filter) && r.abc !== filter) return false;
         if (['stockout', 'reorder_soon', 'overstock', 'dead'].includes(filter) && st !== filter) return false;
         return !q || [r.p.sku, r.p.name, r.p.supplier].some((v) => v.toLowerCase().includes(q));
       })
@@ -237,6 +243,7 @@ export function createStockWise(options = {}) {
           { label: 'Cover', align: 'right', render: (r) => (r.rec.cover === null ? '—' : `${Math.floor(r.rec.cover)}d`) },
           { label: 'Reorder point', align: 'right', render: (r) => (r.rec.avg ? Math.ceil(r.rec.reorderPoint) : '—') },
           { label: 'Order qty', align: 'right', render: (r) => (r.rec.qty ? html`<strong>${fmtQty(r.rec.qty)}</strong><span class="sub">${m(r.rec.orderCost)}</span>` : '—') },
+          { label: 'ABC', render: (r) => badge(r.abc, r.abc === 'A' ? 'good' : r.abc === 'B' ? 'info' : 'neutral') },
           { label: 'Status', render: (r) => badge(STATUS_LABEL[r.rec.status], STATUS_TONE[r.rec.status]) },
         ],
         rows: rows.slice(0, 400),
@@ -252,7 +259,7 @@ export function createStockWise(options = {}) {
       { label: 'sku', value: (r) => r.p.sku }, { label: 'name', value: (r) => r.p.name }, { label: 'supplier', value: (r) => r.p.supplier },
       { label: 'on_hand', value: (r) => r.p.on_hand }, { label: 'on_order', value: (r) => r.p.on_order }, { label: 'unit_cost', value: (r) => r.p.unit_cost / 100 },
       { label: 'lead_time_days', value: (r) => r.p.lead_time_days }, { label: 'avg_daily_sales', value: (r) => +r.rec.avg.toFixed(2) },
-      { label: 'reorder_point', value: (r) => Math.ceil(r.rec.reorderPoint) }, { label: 'status', value: (r) => STATUS_LABEL[r.rec.status] }, { label: 'suggested_order_qty', value: (r) => r.rec.qty },
+      { label: 'reorder_point', value: (r) => Math.ceil(r.rec.reorderPoint) }, { label: 'abc_class', value: (r) => r.abc }, { label: 'status', value: (r) => STATUS_LABEL[r.rec.status] }, { label: 'suggested_order_qty', value: (r) => r.rec.qty },
     ]));
   });
 

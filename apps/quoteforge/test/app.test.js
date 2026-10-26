@@ -354,3 +354,35 @@ test('settings: custom prefix, branding on the public document, csv export', asy
     await t.close();
   }
 });
+
+test('saved items: add, update by description, autofill data in the editor, delete, isolation, validation', async () => {
+  const t = await boot();
+  try {
+    const c = await setup(t);
+    await c.post('/catalog', { description: 'Site visit', unit: 'hrs', price: '1,500' });
+    await c.post('/catalog', { description: 'site VISIT', unit: 'hrs', price: '1800' });
+    assert.equal(t.app.db.get('SELECT COUNT(*) AS n FROM catalog_items').n, 1, 'same description (any case) updates, not duplicates');
+    assert.equal(t.app.db.get('SELECT unit_price AS p FROM catalog_items').p, 180000);
+    for (const bad of [{ description: '', price: '5' }, { description: 'X', price: '-1' }, { description: 'X', price: 'abc' }]) await c.post('/catalog', bad);
+    assert.equal(t.app.db.get('SELECT COUNT(*) AS n FROM catalog_items').n, 1);
+
+    const editor = (await c.get('/quotes/new')).text;
+    assert.match(editor, /<datalist id="catalog"><option value="Site visit">/);
+    assert.match(editor, /data-catalog="\[\{&quot;d&quot;:&quot;Site visit&quot;,&quot;u&quot;:&quot;hrs&quot;,&quot;p&quot;:1800\}\]"/);
+    assert.match(editor, /name="desc\[\]" list="catalog"/);
+    assert.match((await c.get('/catalog')).text, /Site visit/);
+
+    const other = t.client();
+    await other.signup('o@example.com');
+    assert.ok(!(await other.get('/quotes/new')).text.includes('Site visit'), 'catalogs are private');
+    assert.equal((await other.post('/catalog/1/delete')).status, 404);
+    await c.post('/catalog/1/delete');
+    assert.equal(t.app.db.get('SELECT COUNT(*) AS n FROM catalog_items').n, 0);
+
+    await c.post('/catalog', { description: '<img src=x onerror=alert(1)>', price: '1' });
+    assert.ok(!(await c.get('/catalog')).text.includes('<img src=x'));
+    assert.ok(!(await c.get('/quotes/new')).text.includes('<img src=x'));
+  } finally {
+    await t.close();
+  }
+});

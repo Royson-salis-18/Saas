@@ -412,3 +412,61 @@ test('pruning removes old raw checks but keeps daily stats for uptime', async ()
     await target.close();
   }
 });
+
+test('maintenance window: no checks, incidents or alerts while it lasts; monitoring resumes after', async () => {
+  const target = await startTarget();
+  const t = await boot();
+  try {
+    const c = await setup(t);
+    await addHttp(c, target.url);
+    await t.app.runDueChecks();
+    assert.equal(monitor(t).state, 'up');
+    await c.post('/monitors/1/maintenance', { hours: '2' });
+    assert.match((await c.get('/dashboard')).text, /Maintenance/);
+    target.state.status = 503;
+    const checksBefore = t.app.db.get('SELECT COUNT(*) AS n FROM checks').n;
+    for (let i = 0; i < 4; i++) await tick(t, 61_000);
+    assert.equal(t.app.db.get('SELECT COUNT(*) AS n FROM checks').n, checksBefore, 'nothing is checked during maintenance');
+    assert.equal(outbox(t).length, 0);
+    assert.equal(t.app.db.get('SELECT COUNT(*) AS n FROM incidents').n, 0);
+    assert.equal(monitor(t).state, 'up');
+    t.clock.t += 2 * 3600e3;
+    await t.app.runDueChecks();
+    await tick(t);
+    assert.equal(monitor(t).state, 'down', 'real outages are caught again once the window is over');
+    assert.deepEqual(subjects(t), ['[DOWN] Site']);
+  } finally {
+    await t.close();
+    await target.close();
+  }
+});
+
+test('maintenance on a heartbeat restarts its clock, and ending early resumes monitoring', async () => {
+  const t = await boot();
+  try {
+    const c = await setup(t);
+    await c.post('/monitors', { type: 'heartbeat', name: 'Backup', interval_s: '3600', grace_s: '300' });
+    const { token } = monitor(t);
+    await t.client().get(`/ping/${token}`);
+    await c.post('/monitors/1/maintenance', { hours: '4' });
+    t.clock.t += 3 * 3600e3 + 3600e3 * 0.9; // past the original deadline but inside maintenance
+    await t.app.runDueChecks();
+    assert.equal(outbox(t).length, 0);
+    assert.equal(monitor(t).state, 'up');
+    assert.match((await t.client().get(`/ping/${token}/fail`)).text, /in maintenance/);
+    assert.equal(monitor(t).state, 'up', 'failure pings are ignored during maintenance');
+    t.clock.t += 0.2 * 3600e3; // maintenance over; the clock restarted at its end, so still on time
+    await t.app.runDueChecks();
+    assert.equal(monitor(t).state, 'up');
+    t.clock.t += 3900e3 + 1000; // a full period + grace after the window with no ping
+    await t.app.runDueChecks();
+    assert.equal(monitor(t).state, 'down');
+    await c.post('/monitors/1/maintenance-end');
+    assert.equal(monitor(t).maintenance_until, null);
+    const other = t.client();
+    await other.signup('o@example.com');
+    assert.equal((await other.post('/monitors/1/maintenance', { hours: '1' })).status, 404);
+  } finally {
+    await t.close();
+  }
+});
