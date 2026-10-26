@@ -31,6 +31,8 @@ export function statusOf(inv, today) {
  */
 export function nextStage(inv, today, enabledKeys = DEFAULT_STAGES, { nowMs = Date.now(), minGapDays = 4 } = {}) {
   if (inv.status !== 'open' || inv.reminders_paused || inv.claimed_paid_at) return null;
+  // A promise to pay holds reminders until the promised day has passed; a broken promise resumes them.
+  if (inv.promise_date && today <= inv.promise_date) return null;
   const late = daysOverdue(inv, today);
   let pick = -1;
   STAGES.forEach((s, i) => {

@@ -11,6 +11,7 @@ import {
   download,
   emptyState,
   field,
+  addDays,
   formatDate,
   formatMoney,
   html,
@@ -83,7 +84,8 @@ const MIGRATIONS = [
     sent_at INTEGER NOT NULL
   );
   CREATE INDEX reminders_invoice ON reminders (invoice_id);
-  `,
+  `,,
+  `ALTER TABLE invoices ADD COLUMN promise_date TEXT;`
 ];
 
 export const PLANS = {
@@ -376,6 +378,8 @@ export function createDunningDesk(options = {}) {
               render: (i) =>
                 i.claimed_paid_at && i.status === 'open'
                   ? badge('Client says paid', 'warn')
+                  : i.promise_date && i.promise_date >= today && i.status === 'open'
+                    ? badge(`Promised ${formatDate(i.promise_date)}`, 'info')
                   : i.reminders_paused
                     ? badge('Paused', 'neutral')
                     : i.last_stage !== null && i.status !== 'void'
@@ -512,6 +516,10 @@ export function createDunningDesk(options = {}) {
           empty: 'No reminders sent yet.',
         }))}
       </div>
+      ${inv.status === 'open' ? card('Promise to pay', html`
+        <p class="muted">${inv.promise_date ? html`Client promised to pay by <strong>${formatDate(inv.promise_date)}</strong>. Reminders are on hold until then${inv.promise_date < today ? ' — the date has passed, so they have resumed' : ''}.` : 'If the client gives you a date, record it. Reminders pause until that day, and resume automatically if it is missed.'}</p>
+        <form method="post" action="/invoices/${inv.id}/promise" class="inline-form">${csrfField(ctx)}<input type="date" name="date" value="${inv.promise_date ?? ''}" min="${today}" required><button class="btn" type="submit">${inv.promise_date ? 'Update date' : 'Record promise'}</button></form>
+        ${inv.promise_date ? post('promise-clear', 'Clear promise', 'btn btn-sm') : ''}`) : ''}
       ${card('Details', invoiceForm(ctx, inv))}
       ${post('delete', 'Delete invoice', 'btn btn-danger', 'data-confirm="Delete this invoice and its history?"')}`,
     );
@@ -550,6 +558,18 @@ export function createDunningDesk(options = {}) {
   app.post('/invoices/:id/resume', (ctx) => {
     db.run('UPDATE invoices SET reminders_paused = 0, claimed_paid_at = NULL WHERE id = ? AND user_id = ?', getInvoice(ctx, ctx.params.id).id, ctx.user.id);
     return redirect(`/invoices/${ctx.params.id}`, { ok: 'Reminders resumed.' });
+  });
+  app.post('/invoices/:id/promise', (ctx) => {
+    const inv = getInvoice(ctx, ctx.params.id);
+    const today = ctx.today();
+    const d = String(ctx.body.date ?? '');
+    if (!isISODate(d) || d < today || d > addDays(today, 90)) return redirect(`/invoices/${inv.id}`, { err: 'Choose a date between today and 90 days from now.' });
+    db.run('UPDATE invoices SET promise_date = ? WHERE id = ?', d, inv.id);
+    return redirect(`/invoices/${inv.id}`, { ok: `Promise recorded. Reminders are on hold until ${formatDate(d)}.` });
+  });
+  app.post('/invoices/:id/promise-clear', (ctx) => {
+    db.run('UPDATE invoices SET promise_date = NULL WHERE id = ? AND user_id = ?', getInvoice(ctx, ctx.params.id).id, ctx.user.id);
+    return redirect(`/invoices/${ctx.params.id}`, { ok: 'Promise cleared.' });
   });
   app.post('/invoices/:id/delete', (ctx) => {
     db.run('DELETE FROM invoices WHERE id = ? AND user_id = ?', getInvoice(ctx, ctx.params.id).id, ctx.user.id);

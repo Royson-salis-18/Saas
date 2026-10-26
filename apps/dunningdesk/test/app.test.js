@@ -260,3 +260,43 @@ test('INR users get day-first dates and rupee formatting', async () => {
     await t.close();
   }
 });
+
+test('promise to pay holds reminders until the date, then resumes automatically', async () => {
+  const t = await boot();
+  try {
+    const c = t.client();
+    await c.signup();
+    await upgrade(t);
+    await c.post('/import', { csv: CSV });
+    const id = t.app.db.get(`SELECT id FROM invoices WHERE number = 'INV-1'`).id;
+    t.clock.t = Date.UTC(2026, 9, 25, 15, 0, 0);
+    for (const bad of ['2026-10-01', '2027-06-01', 'soon', '']) await c.post(`/invoices/${id}/promise`, { date: bad });
+    assert.equal(t.app.db.get('SELECT promise_date AS p FROM invoices WHERE id = ?', id).p, null, 'past, too-far and invalid dates are refused');
+    await c.post(`/invoices/${id}/promise`, { date: '2026-11-02' });
+    assert.match((await c.get(`/invoices/${id}`)).text, /promised to pay by/);
+    assert.match((await c.get('/invoices?filter=open')).text, /Promised 2 Nov 2026/);
+    assert.equal((await t.app.runReminders()).sent, 0, 'on hold while promised');
+    t.clock.t = Date.UTC(2026, 10, 2, 15, 0, 0);
+    assert.equal((await t.app.runReminders()).sent, 0, 'still on hold on the promised day itself');
+    t.clock.t = Date.UTC(2026, 10, 3, 15, 0, 0);
+    assert.equal((await t.app.runReminders()).sent, 1, 'broken promise: reminders resume');
+    await c.post(`/invoices/${id}/promise-clear`);
+    assert.equal(t.app.db.get('SELECT promise_date AS p FROM invoices WHERE id = ?', id).p, null);
+  } finally {
+    await t.close();
+  }
+});
+
+test('promise to pay is per account', async () => {
+  const t = await boot();
+  try {
+    const a = t.client();
+    await a.signup('a@example.com');
+    await a.post('/import', { csv: CSV });
+    const b = t.client();
+    await b.signup('b@example.com');
+    assert.equal((await b.post('/invoices/1/promise', { date: '2026-11-02' })).status, 404);
+  } finally {
+    await t.close();
+  }
+});

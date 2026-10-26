@@ -158,3 +158,10 @@ test('csv import reports missing required columns', () => {
   assert.deepEqual(r.missing.sort(), ['amount', 'due_date']);
   assert.equal(r.rows.length, 0);
 });
+
+test('a promise to pay pauses reminders through the promised day only', () => {
+  const i = inv({ due_date: '2026-10-01', promise_date: '2026-10-30' });
+  assert.equal(nextStage(i, '2026-10-25', undefined, { nowMs: NOW }), null);
+  assert.equal(nextStage(i, '2026-10-30', undefined, { nowMs: NOW }), null);
+  assert.equal(stageKey(nextStage(i, '2026-10-31', undefined, { nowMs: NOW })), 'late_3');
+});
