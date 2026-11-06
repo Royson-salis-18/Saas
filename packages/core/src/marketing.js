@@ -31,7 +31,11 @@ export function pricingCards(app, { cta = '/signup' } = {}) {
 /** Illustrative dashboard shown in the hero. Always labelled as sample data. */
 function heroPreview(pv) {
   if (!pv) return '';
-  return html`<div class="mock" aria-hidden="true">
+  const chip = pv.kpis[2] ?? pv.kpis[0];
+  return html`<div class="mock-wrap" aria-hidden="true">
+    <div class="float float-note"><span class="float-dot"></span><div><strong>${chip.label}</strong><span>${chip.value}</span></div></div>
+    <div class="float float-tile"><span>${pv.ringTitle}</span><div class="mini">${pv.bars.slice(0, 7).map((b) => html`<i style="height:${Math.max(14, Math.round((b.value / Math.max(1, ...pv.bars.map((x) => x.value))) * 100))}%"></i>`)}</div><strong>${pv.ring.text}</strong></div>
+  <div class="mock">
     <div class="mock-bar"><i></i><i></i><i></i><span>Sample data</span></div>
     <div class="mock-body">
       ${statGrid(pv.kpis)}
@@ -39,7 +43,7 @@ function heroPreview(pv) {
         <div class="card"><h2>${pv.chartTitle}</h2>${vbars({ items: pv.bars, height: 130 })}</div>
         <div class="card ring-card"><h2>${pv.ringTitle}</h2>${ring({ value: pv.ring.value, text: pv.ring.text, label: pv.ring.label })}<p class="muted center">${pv.ring.note}</p></div>
       </div>
-    </div></div>`;
+    </div></div></div>`;
 }
 
 export function landingPage(ctx) {
