@@ -1,6 +1,6 @@
 import {
   HttpError, badge, card, clean, createApp, csrfField, download, emptyState, field, formatDate, formatMoney, html, isEmail, raw, isISODate,
-  pageHeader, parseAmount, parseDateLoose, redirect, ring, statGrid, table, toCsv, todayIn, toMinor, vbars, THEMES } from '@saas/core';
+  pageHeader, parseAmount, parseDateLoose, redirect, ring, statGrid, table, timeline, toCsv, todayIn, toMinor, vbars, THEMES } from '@saas/core';
 import { CYCLES, annualCost, noticeDeadline, nextReminder, nextRenewal, parseContractCsv, summarise, urgency } from './logic.js';
 
 const MIGRATIONS = [
@@ -145,16 +145,11 @@ export function createRenewalRadar(options = {}) {
       ])}
       <div class="viz">${card('Yearly spend by category', vbars({ height: 170, format: (v) => (v >= 1e5 ? `${Math.round(v / 1e5)}L` : v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), items: cats.map(([k, v]) => ({ label: k.slice(0, 10), value: Math.round(v / 100) })) }))}
         ${card('Spend on auto-renew', html`${ring({ value: s.autoRenewShare, max: 100, text: `${s.autoRenewShare}%`, label: 'auto-renews' })}<p class="muted center">Renews unless you cancel in time</p>`, { className: 'ring-card' })}</div>
-      ${card('Deadlines to watch', table({
-        columns: [
-          { label: 'Contract', render: (c) => html`<a href="/contracts/${c.id}"><strong>${c.name}</strong></a>${c.vendor ? html`<span class="sub">${c.vendor}</span>` : ''}` },
-          { label: 'Cancel by', render: (c) => { const d = Math.round((Date.parse(noticeDeadline(c)) - Date.parse(today)) / 86400000); return html`${formatDate(noticeDeadline(c))}<span class="sub">${d < 0 ? `${-d}d ago` : d === 0 ? 'today' : `in ${d}d`}</span>`; } },
-          { label: 'Renews', render: (c) => formatDate(c.renewal_date) },
-          { label: 'Cost / year', align: 'right', render: (c) => m(annualCost(c)) },
-          { label: '', render: (c) => { const u = urgency(c, today); return badge(U_LABEL[u], U_TONE[u]); } },
-        ],
-        rows: attention, empty: 'Nothing needs a decision right now.',
-      }))}`,
+      ${card('Deadlines to watch', timeline(attention.map((c) => {
+        const d = Math.round((Date.parse(noticeDeadline(c)) - Date.parse(today)) / 86400000);
+        const u = urgency(c, today);
+        return { title: c.name, href: `/contracts/${c.id}`, tone: U_TONE[u] === 'neutral' ? '' : U_TONE[u], meta: `${c.vendor ? `${c.vendor} · ` : ''}cancel by ${formatDate(noticeDeadline(c))} · renews ${formatDate(c.renewal_date)}`, right: html`<strong>${m(annualCost(c))}</strong><br>${badge(d < 0 ? `${-d}d past deadline` : d === 0 ? 'Deadline today' : `${d}d left`, U_TONE[u])}` };
+      }), 'Nothing needs a decision right now.'))}`,
     );
   });
 
