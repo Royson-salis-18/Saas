@@ -62,7 +62,18 @@ export function vbars({ items, format = (v) => String(v), height = 150 }) {
   })}</div>`;
 }
 
+/** Vertical dashed timeline with glowing nodes. items: { title, meta, right, tone, href } */
+export function timeline(items, empty = 'Nothing here yet.') {
+  if (!items.length) return html`<p class="muted pad">${empty}</p>`;
+  return html`<ol class="tl">${items.map(
+    (i) => html`<li class="tl-item ${i.tone ? `tl-${i.tone}` : ''}"><span class="tl-node" aria-hidden="true"></span>
+      <div class="tl-body">${i.href ? html`<a href="${i.href}"><strong>${i.title}</strong></a>` : html`<strong>${i.title}</strong>`}${i.meta ? html`<span class="tl-meta">${i.meta}</span>` : ''}</div>
+      ${i.right ? html`<div class="tl-right">${i.right}</div>` : ''}</li>`,
+  )}</ol>`;
+}
+
 const ICONS = {
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   upload: '<path d="M12 16V4m0 0L7 9m5-5 5 5M4 20h16"/>',
@@ -141,6 +152,29 @@ function navLink(ctx, item) {
   return html`<a href="${item.href}" title="${item.label}" class="${active ? 'active' : ''}">${icon(iconFor(item))}<span>${item.label}</span></a>`;
 }
 
+function greeting(ctx) {
+  const t = ctx.now();
+  const tz = ctx.user.timezone || 'UTC';
+  let hour = 12;
+  let day = '';
+  try {
+    hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hourCycle: 'h23' }).format(t));
+    day = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'short' }).format(t);
+  } catch { /* unknown timezone: skip */ }
+  const when = hour < 5 ? 'Working late' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const first = (ctx.user.name || '').trim().split(/\s+/)[0];
+  return html`<p class="greet"><strong>${when}${first ? `, ${first}` : ''}</strong>${day ? html`<span class="chip">${day}</span>` : ''}</p>`;
+}
+
+/** Ctrl/Cmd+K quick-jump list: every nav page plus account pages. Behaviour lives in app.js. */
+function palette(ctx) {
+  const items = [...ctx.app.config.nav, { href: '/account', label: 'Account' }, { href: '/billing', label: 'Billing and plans' }];
+  return html`<dialog class="palette" data-palette aria-label="Jump to a page"><form method="dialog" class="palette-box">
+    <input type="text" data-palette-input placeholder="Jump to a page…" autocomplete="off" aria-label="Jump to a page">
+    <ul data-palette-list>${items.map((n) => html`<li><a href="${n.href}">${icon(iconFor(n))}<span>${n.label}</span></a></li>`)}</ul>
+  </form></dialog>`;
+}
+
 /** Wrap page content in the shared document shell. */
 const HEAD_FONTS = {
   sans: 'inherit',
@@ -149,9 +183,10 @@ const HEAD_FONTS = {
 };
 const cssVars = (o = {}) => Object.entries(o).map(([k, v]) => `--${k}:${v}`).join(';');
 /** Per-product palette: dark and light surfaces, radius, heading font. Values come from our own config, never user input. */
-export function themeStyle(t) {
+export function themeStyle(t, glyph) {
   if (!t) return '';
-  return `<style>:root{${cssVars(t.dark)};--radius:${t.radius ?? 20}px;--radius-sm:${Math.round((t.radius ?? 20) * 0.6)}px;--head:${HEAD_FONTS[t.font] ?? HEAD_FONTS.sans};--a-ink:${t.ink ?? '#0A0D0B'}}@media (prefers-color-scheme:light){:root{${cssVars(t.light)};--a-ink:${t.lightInk ?? '#ffffff'}}}</style>`;
+  const mark = glyph ? `--glyph:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='${glyphPath(glyph)}'/%3E%3C/svg%3E");` : '';
+  return `<style>:root{${mark}${cssVars(t.dark)};--radius:${t.radius ?? 20}px;--radius-sm:${Math.round((t.radius ?? 20) * 0.6)}px;--head:${HEAD_FONTS[t.font] ?? HEAD_FONTS.sans};--a-ink:${t.ink ?? '#0A0D0B'}}@media (prefers-color-scheme:light){:root{${cssVars(t.light)};--a-ink:${t.lightInk ?? '#ffffff'}}}</style>`;
 }
 
 export function layout(ctx, { title, body, description, status = 200, noindex = true, scripts = [] }) {
@@ -172,7 +207,7 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
   ${ctx.csrf ? html`<meta name="csrf-token" content="${ctx.csrf}">` : ''}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
-  ${raw(themeStyle(config.theme))}
+  ${raw(themeStyle(config.theme, config.glyph))}
   <script src="/static/app.js" defer></script>
   ${scripts.map((s) => html`<script src="${s}" defer></script>`)}
 </head>
@@ -181,7 +216,8 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
     ? html`<div class="shell">
       <aside class="side">
         <a class="brand" href="/"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${glyphPath(config.glyph)}"/></svg></span>${config.name}</a>
-        <p class="side-label">Menu</p>
+        <button type="button" class="cmdk" data-cmdk-open aria-label="Search and jump to a page">${icon('search')}<span>Search</span><kbd>Ctrl K</kbd></button>
+        <p class="side-label">Navigation</p>
         <nav>${config.nav.map((n) => navLink(ctx, n))}</nav>
         <div class="side-spacer"></div>
         ${ctx.plan === 'free'
@@ -193,9 +229,10 @@ export function layout(ctx, { title, body, description, status = 200, noindex = 
           <form method="post" action="/logout" class="inline">${csrfField(ctx)}<button class="link" type="submit" aria-label="Log out" title="Log out">${icon('out')}<span>Log out</span></button></form></div>
       </aside>
       <div class="content">
-        <main class="container">${flash ? html`<div class="flash flash-${flash.type}" role="status">${flash.msg}</div>` : ''}${body}</main>
+        <main class="container">${ctx.path === config.home ? greeting(ctx) : ''}${flash ? html`<div class="flash flash-${flash.type}" role="status">${flash.msg}</div>` : ''}${body}</main>
         <footer class="footer"><div class="container"><span>© ${new Date(ctx.now()).getUTCFullYear()} ${config.name}</span><a href="/privacy">Privacy</a><a href="/terms">Terms</a>${config.env.SUPPORT_EMAIL ? html`<a href="mailto:${config.env.SUPPORT_EMAIL}">Support</a>` : ''}</div></footer>
       </div>
+      ${palette(ctx)}
     </div>`
     : html`<header class="topbar"><div class="container bar">
         <a class="brand" href="/"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${glyphPath(config.glyph)}"/></svg></span>${config.name}</a>

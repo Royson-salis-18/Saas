@@ -67,6 +67,39 @@
     }
   });
 
+  // Ctrl/Cmd+K quick jump
+  var pal = document.querySelector('[data-palette]');
+  if (pal && pal.showModal) {
+    var pin = pal.querySelector('[data-palette-input]');
+    var links = Array.prototype.slice.call(pal.querySelectorAll('li'));
+    var cur = 0;
+    var paint = function () {
+      var vis = links.filter(function (li) { return !li.hidden; });
+      links.forEach(function (li) { li.classList.remove('on'); });
+      if (vis[cur]) vis[cur].classList.add('on');
+      return vis;
+    };
+    var openPal = function () { pin.value = ''; links.forEach(function (li) { li.hidden = false; }); cur = 0; paint(); pal.showModal(); pin.focus(); };
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (pal.open) pal.close(); else openPal(); }
+    });
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('[data-cmdk-open]')) openPal();
+      else if (e.target === pal) pal.close();
+    });
+    pin.addEventListener('input', function () {
+      var q = pin.value.trim().toLowerCase();
+      links.forEach(function (li) { li.hidden = q && li.textContent.toLowerCase().indexOf(q) === -1; });
+      cur = 0; paint();
+    });
+    pin.addEventListener('keydown', function (e) {
+      var vis = paint();
+      if (e.key === 'ArrowDown') { e.preventDefault(); cur = Math.min(vis.length - 1, cur + 1); paint(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); cur = Math.max(0, cur - 1); paint(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (vis[cur]) window.location.href = vis[cur].querySelector('a').href; }
+    });
+  }
+
   // Auto-continue to an external checkout after a short pause.
   var auto = document.querySelector('a[data-autoclick]');
   if (auto) setTimeout(function () { window.location.href = auto.href; }, 600);
