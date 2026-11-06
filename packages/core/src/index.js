@@ -11,7 +11,7 @@ export {
   csrfField,
   delta,
   icon,
-  ring,
+  ring, timeline,
   vbars,
   emptyState,
   field,
